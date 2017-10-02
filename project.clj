@@ -1,4 +1,4 @@
-(defproject open-company-change "0.0.1-SNAPSHOT"
+(defproject open-company-change "0.1.0-SNAPSHOT"
   :description "OpenCompany Change Service"
   :url "https://github.com/open-company/open-company-change"
   :license {
@@ -41,7 +41,7 @@
     [org.apache.httpcomponents/httpclient "4.5.3"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.14.2"]
+    [open-company/lib "0.14.4"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async

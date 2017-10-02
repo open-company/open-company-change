@@ -5,7 +5,7 @@
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]))
 
-(def table-name :user_container_time)
+(def table-name (keyword (str c/dynamodb-table-prefix "_user_container_time")))
 
 (schema/defn ^:always-validate seen!
   [user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID seen-at :- lib-schema/ISO8601]

@@ -27,6 +27,8 @@
 
 (defonce dynamodb-end-point (or (env :dynamodb-end-point) "http://localhost:8000"))
 
+(defonce dynamodb-table-prefix (or (env :dynamodb-table-prefix) "local"))
+
 (defonce dynamodb-opts {
     :access-key (env :aws-access-key-id)
     :secret-key (env :aws-secret-access-key)
