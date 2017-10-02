@@ -1,0 +1,94 @@
+(ns oc.change.components
+  (:require [com.stuartsierra.component :as component]
+            [taoensso.timbre :as timbre]
+            [org.httpkit.server :as httpkit]
+            [oc.lib.sqs :as sqs]
+            [oc.lib.async.watcher :as watcher]
+            [oc.change.api.websockets :as websockets-api]
+            [oc.change.async.persistence :as persistence]))
+
+(defrecord HttpKit [options handler]
+  component/Lifecycle
+  (start [component]
+    (let [handler (get-in component [:handler :handler] handler)
+          server  (httpkit/run-server handler options)]
+      (websockets-api/start)
+      (assoc component :http-kit server)))
+  (stop [{:keys [http-kit] :as component}]
+    (if http-kit
+      (do
+        (http-kit)
+        (websockets-api/stop)
+        (dissoc component :http-kit))
+      component)))
+ 
+(defrecord Handler [handler-fn]
+  component/Lifecycle
+  (start [component]
+    (timbre/info "[handler] starting")
+    (assoc component :handler (handler-fn component)))
+  (stop [component]
+    (dissoc component :handler)))
+
+(defrecord AsyncConsumers []
+  component/Lifecycle
+
+  (start [component]
+    (timbre/info "[async-consumers] starting")
+    (persistence/start) ; core.async channel consumer for persisting events
+    (watcher/start) ; core.async channel consumer for watched items (containers watched by websockets) events
+    (assoc component :async-consumers true))
+
+  (stop [{:keys [async-consumers] :as component}]
+    (if async-consumers
+      (do
+        (timbre/info "[async-consumers] stopping")
+        (persistence/stop) ; core.async channel consumer for persisting events
+        (watcher/stop) ; core.async channel consumer for watched items (containers watched by websockets) events
+        (dissoc component :async-consumers))
+    component)))
+
+(defn change-system [{:keys [httpkit sqs-consumer]}]
+  (component/system-map
+    :async-consumers (component/using
+                        (map->AsyncConsumers {})
+                        [])
+    :sqs-consumer (sqs/sqs-listener sqs-consumer)
+    :handler (component/using
+                (map->Handler {:handler-fn (:handler-fn httpkit)})
+                [])    
+    :server  (component/using
+                (map->HttpKit {:options {:port (:port httpkit)}})
+                [:handler])))
+
+;; ----- REPL usage -----
+
+(comment
+
+  ;; To use the Interaction Service from the REPL
+  (require '[com.stuartsierra.component :as component])
+  (require '[oc.change.config :as config])
+  (require '[oc.change.components :as components] :reload)
+  (require '[oc.change.app :as app] :reload)
+
+  (def change-service (components/change-system {:httpkit {:handler-fn app/app
+                                                           :port config/change-server-port}
+                                                :sqs-consumer {
+                                                  :sqs-queue c/aws-sqs-change-queue
+                                                  :message-handler app/sqs-handler
+                                                  :sqs-creds {
+                                                    :access-key c/aws-access-key-id
+                                                    :secret-key c/aws-secret-access-key}}}))
+    
+  (def instance (component/start change-service))
+
+  ;; if you need to change something, just stop the service
+
+  (component/stop instance)
+
+  ;; reload whatever namespaces you need to and start the service again, change the system if you want by re-def'ing
+  ;; the `change-service` var above.
+
+  (def instance (component/start change-service))
+
+  )
