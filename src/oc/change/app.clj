@@ -78,10 +78,10 @@
 (defn app [sys]
   (cond-> (routes sys)
     c/dsn             (sentry-mw/wrap-sentry c/dsn) ; important that this is first
-    ;c/prod?           wrap-with-logger
+    c/prod?           wrap-with-logger
     true              wrap-keyword-params
     true              wrap-params
-    ;true              (wrap-cors #".*")
+    true              (wrap-cors #".*")
     c/hot-reload      wrap-reload))
 
 (defn start

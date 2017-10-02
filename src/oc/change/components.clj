@@ -9,11 +9,13 @@
 
 (defrecord HttpKit [options handler]
   component/Lifecycle
+
   (start [component]
     (let [handler (get-in component [:handler :handler] handler)
           server  (httpkit/run-server handler options)]
       (websockets-api/start)
       (assoc component :http-kit server)))
+
   (stop [{:keys [http-kit] :as component}]
     (if http-kit
       (do
@@ -24,9 +26,11 @@
  
 (defrecord Handler [handler-fn]
   component/Lifecycle
+
   (start [component]
     (timbre/info "[handler] starting")
     (assoc component :handler (handler-fn component)))
+
   (stop [component]
     (dissoc component :handler)))
 
