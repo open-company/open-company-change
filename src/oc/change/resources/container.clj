@@ -2,6 +2,8 @@
   "Store tuples of: container-id and timestamp"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
+            [clj-time.core :as time]
+            [clj-time.coerce :as coerce]
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]))
 
@@ -11,7 +13,8 @@
   [container-id :- lib-schema/UniqueID change-at :- lib-schema/ISO8601]
   (far/put-item c/dynamodb-opts table-name {
       :container_id container-id
-      :change_at change-at})
+      :change_at change-at
+      :ttl (coerce/to-long (time/plus (time/now) (time/days c/container-time-ttl)))})
   true)
 
 (schema/defn ^:always-validate change :- [{:container-id lib-schema/UniqueID :change-at lib-schema/ISO8601}]

@@ -2,6 +2,8 @@
   "Store triples of: user-id, container-id and timestamp"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
+            [clj-time.core :as time]
+            [clj-time.coerce :as coerce]
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]))
 
@@ -12,7 +14,8 @@
   (far/put-item c/dynamodb-opts table-name {
       :user_id user-id
       :container_id container-id
-      :seen_at seen-at})
+      :seen_at seen-at
+      :ttl (coerce/to-long (time/plus (time/now) (time/days c/user-container-time-ttl)))})
   true)
 
 (schema/defn ^:always-validate seen :- [{:container-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
