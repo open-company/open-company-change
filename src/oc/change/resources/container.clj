@@ -19,11 +19,13 @@
 
 (schema/defn ^:always-validate change :- [{:container-id lib-schema/UniqueID :change-at lib-schema/ISO8601}]
   [container-ids :- [lib-schema/UniqueID]]
-  (->> (far/batch-get-item c/dynamodb-opts {table-name {
-          :prim-kvs (map #(hash-map :container_id %) container-ids)
-          :attrs [:container_id :change_at]}})
-    :container_time
-    (map #(clojure.set/rename-keys % {:container_id :container-id :change_at :change-at}))))
+  (if (empty? container-ids)
+    []
+    (->> (far/batch-get-item c/dynamodb-opts {table-name {
+            :prim-kvs (map #(hash-map :container_id %) container-ids)
+            :attrs [:container_id :change_at]}})
+      table-name
+      (map #(clojure.set/rename-keys % {:container_id :container-id :change_at :change-at})))))
 
 (comment
 
@@ -44,11 +46,10 @@
 
   (container/change! "1111-1111-1111" (oc-time/current-timestamp))
 
-  (container/change ["5678-edcb-5678"])
+  (container/change ["1111-1111-1111"])
 
-  (container/change! "5678-edcb-5678" (oc-time/current-timestamp))
   (container/change! "1ab1-2ab2-3ab3" (oc-time/current-timestamp))
 
-  (u/change ["5678-edcb-5678" "1ab1-2ab2-3ab3" "1111-1111-1111"])
+  (u/change ["1111-1111-1111" "1ab1-2ab2-3ab3" "5678-edcb-5678"])
 
 )

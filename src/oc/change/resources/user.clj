@@ -20,11 +20,13 @@
 
 (schema/defn ^:always-validate seen :- [{:container-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID container-ids :- [lib-schema/UniqueID]]
-  (->> (far/batch-get-item c/dynamodb-opts {table-name {
-          :prim-kvs (map #(hash-map :user_id user-id :container_id %) container-ids)
-          :attrs [:container_id :seen_at]}})
-    :user_container_time
-    (map #(clojure.set/rename-keys % {:container_id :container-id :seen_at :seen-at}))))
+  (if (empty? container-ids)
+    []
+    (->> (far/batch-get-item c/dynamodb-opts {table-name {
+            :prim-kvs (map #(hash-map :user_id user-id :container_id %) container-ids)
+            :attrs [:container_id :seen_at]}})
+      table-name
+      (map #(clojure.set/rename-keys % {:container_id :container-id :seen_at :seen-at})))))
 
 (comment
 

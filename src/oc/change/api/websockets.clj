@@ -187,7 +187,6 @@
 
   ;; WebSocket REPL client
 
-
   (require '[http.async.client :as http])
   (require '[oc.lib.time :as oc-time])
   (require '[oc.change.resources.container :as container])
