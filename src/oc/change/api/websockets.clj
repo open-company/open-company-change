@@ -46,7 +46,7 @@
 (defn- event-msg-handler
   "Wraps `-event-msg-handler` with logging, error catching, etc."
   [{:as ev-msg :keys [id ?data event]}]
-  (timbre/debug "[websocket]" event id ?data)
+  (timbre/trace "[websocket]" event id ?data)
   (-event-msg-handler ev-msg))
 
 (defmethod -event-msg-handler
