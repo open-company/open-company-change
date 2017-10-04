@@ -67,6 +67,11 @@
     (?reply-fn {:umatched-event-as-echoed-from-from-server event})))
 
 (defmethod -event-msg-handler
+  :chsk/ws-ping
+  [_]
+  (timbre/trace "[websocket] ping"))
+
+(defmethod -event-msg-handler
   ;; Client connected
   :chsk/uidport-open
   

@@ -79,6 +79,7 @@ Extract the compressed file to a place that will be handy to run DynamoDB from, 
 work on most Unix-like operating systems.
 
 ```console
+mkdir /usr/local/dynamodb
 tar -xvf dynamodb_local_latest.tar.gz -C /usr/local/dynamodb
 ```
 
@@ -94,6 +95,55 @@ For production, it is recommended you use Amazon DynamoDB in the cloud rather th
 [instructions](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SettingUp.DynamoWebService.html)
 for setting up the cloud service in your AWS account.
 
+#### Required Secrets
+
+Make sure you update the section in `project.clj` that looks like this to contain your actual AWS secrets and
+SQS queue name:
+
+```clojure
+;; Dev environment and dependencies
+:dev [:qa {
+  :env ^:replace {
+    :log-level "debug"
+    :aws-access-key-id "CHANGE-ME"
+    :aws-secret-access-key "CHANGE-ME"
+    :aws-sqs-change-queue "CHANGE-ME"
+  }
+```
+
+You can also override these settings with environmental variables in the form of `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY`, etc. Use environmental variables to provide production secrets when running in production.
+
+
+## Usage
+
+Prospective users of [Carrot](https://carrot.io/) should get started by going to [Carrot.io](https://carrot.io/). The following usage is **for developers** wanting to work on the OpenCompany Change Service.
+
+**Make sure you've updated `project.clj` as described above.**
+
+To start a production instance:
+
+```console
+lein start!
+```
+
+Or to start a development instance:
+
+```console
+lein start
+```
+
+To clean all compiled files:
+
+```console
+lein clean
+```
+
+To create a production build run:
+
+```console
+lein build
+```
 
 ## Technical Design
 
