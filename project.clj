@@ -14,7 +14,7 @@
   ;; All profile dependencies
   :dependencies [
     ;; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/clojure "1.9.0-beta1"]
+    [org.clojure/clojure "1.9.0-beta2"]
     ;; Command-line parsing https://github.com/clojure/tools.cli
     [org.clojure/tools.cli "0.3.5"] 
     ;; Web application library https://github.com/ring-clojure/ring
@@ -29,7 +29,7 @@
     ;; Ring logging https://github.com/nberger/ring-logger-timbre
     ;; NB: com.taoensso/encore pulled in by oc.lib
     ;; NB: com.taoensso/timbre pulled in by oc.lib
-    [ring-logger-timbre "0.7.5" :exclusions [com.taoensso/encore com.taoensso/timbre]] 
+    [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore com.taoensso/timbre]] 
     ;; Web routing https://github.com/weavejester/compojure
     [compojure "1.6.0"]
     ;; DynamoDB client https://github.com/ptaoussanis/faraday
@@ -41,7 +41,7 @@
     [org.apache.httpcomponents/httpclient "4.5.3"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.14.5"]
+    [open-company/lib "0.14.7"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -90,7 +90,7 @@
         ;; Example-based testing https://github.com/marick/lein-midje
         [lein-midje "3.2.1"]
         ;; Linter https://github.com/jonase/eastwood
-        [jonase/eastwood "0.2.4"]
+        [jonase/eastwood "0.2.5"]
         ;; Static code search for non-idiomatic code https://github.com/jonase/kibit        
         [lein-kibit "0.1.6-beta2" :exclusions [org.clojure/clojure]]
       ]
@@ -107,7 +107,7 @@
       :plugins [
         ;; Check for code smells https://github.com/dakrone/lein-bikeshed
         ;; NB: org.clojure/tools.cli is pulled in by lein-kibit
-        [lein-bikeshed "0.4.1" :exclusions [org.clojure/tools.cli]] 
+        [lein-bikeshed "0.5.0" :exclusions [org.clojure/tools.cli]] 
         ;; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-checkall "0.1.1"]
         ;; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint

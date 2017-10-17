@@ -2,7 +2,7 @@
   "Namespace for the HTTP application which serves the REST API."
   (:gen-class)
   (:require
-    [clojure.core.async :as async :refer (>!! <!!)]
+    [clojure.core.async :as async :refer (>!!)]
     [raven-clj.core :as sentry]
     [raven-clj.interfaces :as sentry-interfaces]
     [raven-clj.ring :as sentry-mw]

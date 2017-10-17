@@ -148,21 +148,21 @@ lein build
 ## Technical Design
 
 The OpenCompany Change Service handles tracking the read and unread status of content resources. The service does
-this at the content container level, not at the individual content item level.
+this somewhat indirectly, at the content container level, *not* at the individual content item level.
 
-For any given content container, the service knows the time a user last viewed that container, or that the
-viewer has never viewed that container. In addition, the service knows the time content in that container was
+For any given content container, the service knows the time any specific user last viewed that container, or that the
+user has never viewed that container. In addition, the service knows the time that the content in that container was
 last updated.
 
-By tracking just this information, the service can fulfill its key responsibility, answering the question: for user X,
-is there anything new in content container Y, and if there is new content, the content that is new is the content
-that is newer than what time.
+By tracking just this information, the service can fulfill its key responsibility, answering the question: *for
+specific user X, is there any never before seen content in specific container Y, and if there is, the content that
+hasn't been seen is the content that is newer than time Z.*
 
 The change service is composed of 2 main responsibilities for handling *static* content change notifications, which are
 content changes that occur while there's no watcher connected and watching for them:
 
-- Consuming content creation events from the storage service
-- Recording the timestamp of the newest event for each container
+- Consuming content creation events
+- Recording the timestamp of the newest creation event for each container
 
 The change service is composed of 3 main responsibilities for handling *dynamic* content change notifications, which are
 content changes that occur while a watcher is connected and watching for them:
@@ -172,16 +172,56 @@ content changes that occur while a watcher is connected and watching for them:
 time of the newest content in that container and the last time the user saw that container
 - Notifying watchers, via their WebSocket connection, when containers they are watching subsequently get new content
 
+![Change Service Diagram](https://cdn.rawgit.com/open-company/open-company-change/mainline/docs/Change-Service.svg)
+
+### DynamoDB Schema
+
+The DynamoDB schema is quite simple and is made up of two tables: `container_time` and `user_container_time`. To
+support multiple environments, these tables are prefixed with an environment name, such as `staging_container_time` or
+`production_user_container_time`.
+
+The `container_time` table has a string partition/primary key called `container_id`. A full item in the table is:
+
+```json
+{
+  "container_id": 4hex-4hex-4hex UUID,
+  "change_at": ISO8601,
+  "ttl": epoch-time
+}
+```
+
+The meaning of each item is that the container specified by the `container_id` last saw a creation event at the
+`change_at` time, and this record will expire and be removed from DynamoDB at `ttl` time (configured by
+`container-time-ttl` in `config.clj`.
+
+The `user_container_time` table has a string partition/primary key called `user_id`, and a partition/sort key called
+`container_id`. A full item in the table is:
+
+```json
+{
+  "user_id": 4hex-4hex-4hex UUID,
+  "container_id": 4hex-4hex-4hex UUID,
+  "seen_at": ISO8601,
+  "ttl": epoch-time
+}
+```
+
+The meaning of each item is that the user specified by the `user-id` last saw the container specified by the
+`container-id` at the `change-at` time, and this record will expire and be removed from DynamoDB at `ttl` time
+(configured by `user-container-time-ttl` in `config.clj`.
+
 ### SQS Messaging
 
-The change service consumes SQS messages in JSON format from the change queue. These messages inform the change service about new
-content in a container.
+The change service consumes SQS messages in JSON format from the change queue. These messages inform the change service
+about new content in a container. The `user-id` is the UUID of the user that created the content. This is used so
+consumers of this service can ignore events from specific users (such as from themselves).
 
-```
+```json
 {
   "created-at": ISO8601,
   "container-id": 4hex-4hex-4hex UUID,
-  "content-id": 4hex-4hex-4hex UUID,  
+  "content-id": 4hex-4hex-4hex UUID,
+  "user-id": 4hex-4hex-4hex UUID
 }
 ```
 
@@ -220,10 +260,11 @@ indicate the user has seen the container.
 {:container-id "1234-abcd-1234" seen-at: ISO8601}
 ```
 
-At any point, the server may send a `:container/change`, this indicates new content in a particular container.
+At any point, the server may send a `:container/change`, this indicates new content in a particular container, created
+by a particular user.
 
 ```clojure
-{:container-id "1234-abcd-1234" :change-at ISO8601}
+{:container-id "1234-abcd-1234" :change-at ISO8601 :user-id "5678-dcba-8765"}
 ```
 
 The client can subsequently send additional `:container/watch` messages at any time, typically when the user has created
