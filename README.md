@@ -182,7 +182,7 @@ support multiple environments, these tables are prefixed with an environment nam
 
 The `container_time` table has a string partition/primary key called `container_id`. A full item in the table is:
 
-```json
+```
 {
   "container_id": 4hex-4hex-4hex UUID,
   "change_at": ISO8601,
@@ -197,7 +197,7 @@ The meaning of each item is that the container specified by the `container_id` l
 The `user_container_time` table has a string partition/primary key called `user_id`, and a partition/sort key called
 `container_id`. A full item in the table is:
 
-```json
+```
 {
   "user_id": 4hex-4hex-4hex UUID,
   "container_id": 4hex-4hex-4hex UUID,
@@ -216,7 +216,7 @@ The change service consumes SQS messages in JSON format from the change queue. T
 about new content in a container. The `user-id` is the UUID of the user that created the content. This is used so
 consumers of this service can ignore events from specific users (such as from themselves).
 
-```json
+```
 {
   "created-at": ISO8601,
   "container-id": 4hex-4hex-4hex UUID,
