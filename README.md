@@ -172,7 +172,7 @@ content changes that occur while a watcher is connected and watching for them:
 time of the newest content in that container and the last time the user saw that container
 - Notifying watchers, via their WebSocket connection, when containers they are watching subsequently get new content
 
-![Change Service Diagram](https://raw.githubusercontent.com/open-company/open-company-change/mainline/docs/Change-Service.svg)
+![Change Service Diagram](https://cdn.rawgit.com/open-company/open-company-change/mainline/docs/Change-Service.svg)
 
 
 ### DynamoDB Schema
