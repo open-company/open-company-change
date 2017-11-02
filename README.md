@@ -2,8 +2,6 @@
 
 [![MPL License](http://img.shields.io/badge/license-MPL-blue.svg?style=flat)](https://www.mozilla.org/MPL/2.0/)
 [![Build Status](http://img.shields.io/travis/open-company/open-company-change.svg?style=flat)](https://travis-ci.org/open-company/open-company-change)
-[![Dependency Status](https://www.versioneye.com/user/projects/59d636ec368b0865338c5466/badge.svg?style=flat)](https://www.versioneye.com/user/projects/59d636ec368b0865338c5466)
-[![Roadmap on Trello](http://img.shields.io/badge/roadmap-trello-blue.svg?style=flat)](https://trello.com/b/3naVWHgZ/open-company-development)
 
 
 ## Background
@@ -222,6 +220,7 @@ consumers of this service can ignore events from specific users (such as from th
   "created-at": ISO8601,
   "container-id": 4hex-4hex-4hex UUID,
   "content-id": 4hex-4hex-4hex UUID,
+  "content-type": "board/entry",
   "user-id": 4hex-4hex-4hex UUID
 }
 ```

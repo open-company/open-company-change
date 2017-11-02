@@ -44,9 +44,12 @@
   (let [msg-body (clojure.walk/keywordize-keys (json/parse-string (:body msg)))
         error (if (:test-error msg-body) (/ 1 0) false) ; a message testing Sentry error reporting
         msg-type (keyword (:type msg-body))
+        content-type (keyword (:content-type msg-body))
         container-id (:container-id msg-body)]
     (timbre/info "Received message from SQS:" msg-body)
-    (if (= msg-type :change)
+    (if (and
+          (or (= msg-type :add) (= msg-type :refresh) (= msg-type :delete))
+          (or (= content-type :entry) (= content-type :board)))
       (do
         (>!! persistence/persistence-chan (assoc msg-body :change true))
         (>!! watcher/watcher-chan {:send true
