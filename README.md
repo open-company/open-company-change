@@ -220,8 +220,7 @@ consumers of this service can ignore events from specific users (such as from th
   "created-at": ISO8601,
   "container-id": 4hex-4hex-4hex UUID,
   "content-id": 4hex-4hex-4hex UUID,
-  "content-type": "board/entry",
-  "user-id": 4hex-4hex-4hex UUID
+  "content-type": "board/entry"
 }
 ```
 
