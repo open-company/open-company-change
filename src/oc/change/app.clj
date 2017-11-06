@@ -43,13 +43,13 @@
   [msg done-channel]
   (let [msg-body (clojure.walk/keywordize-keys (json/parse-string (:body msg)))
         error (if (:test-error msg-body) (/ 1 0) false) ; a message testing Sentry error reporting
-        msg-type (keyword (:type msg-body))
-        content-type (keyword (:content-type msg-body))
+        change-type (keyword (:change-type msg-body))
+        resource-type (keyword (:resource-type msg-body))
         container-id (:container-id msg-body)]
     (timbre/info "Received message from SQS:" msg-body)
     (if (and
-          (or (= msg-type :add) (= msg-type :refresh) (= msg-type :delete))
-          (or (= content-type :entry) (= content-type :board)))
+          (or (= change-type :add) (= change-type :update) (= change-type :delete))
+          (or (= resource-type :entry) (= resource-type :board)))
       (do
         (>!! persistence/persistence-chan (assoc msg-body :change true))
         (>!! watcher/watcher-chan {:send true
@@ -57,7 +57,7 @@
                                    :event :container/change
                                    :payload {:container-id container-id
                                              :change-at (:change-at msg-body)}}))
-      (timbre/warn "Unknomwn message from SQS:" msg-type)))
+      (timbre/warn "Unknomwn message from SQS:" change-type resource-type)))
   (sqs/ack done-channel msg))
 
 ;; ----- Request Routing -----

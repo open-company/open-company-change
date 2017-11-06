@@ -217,10 +217,11 @@ consumers of this service can ignore events from specific users (such as from th
 
 ```
 {
-  "created-at": ISO8601,
+  "change-type": "add|update|delete"
+  "resource-type": "board|entry"
   "container-id": 4hex-4hex-4hex UUID,
   "content-id": 4hex-4hex-4hex UUID,
-  "content-type": "board/entry"
+  "change-at": ISO8601,
 }
 ```
 
