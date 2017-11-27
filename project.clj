@@ -14,7 +14,7 @@
   ;; All profile dependencies
   :dependencies [
     ;; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/clojure "1.9.0-beta4"]
+    [org.clojure/clojure "1.9.0-RC1"]
     ;; Command-line parsing https://github.com/clojure/tools.cli
     [org.clojure/tools.cli "0.3.5"] 
     ;; Web application library https://github.com/ring-clojure/ring
@@ -80,7 +80,7 @@
         ;; NB: clj-time is pulled in by oc.lib
         ;; NB: joda-time is pulled in by oc.lib via clj-time
         ;; NB: commons-codec pulled in by oc.lib
-        [midje "1.9.0-alpha10" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]] 
+        [midje "1.9.0" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]] 
         ;; Clojure WebSocket client https://github.com/cch1/http.async.client
         [http.async.client "1.2.0"]
         ;; Test Ring requests https://github.com/weavejester/ring-mock
@@ -92,7 +92,7 @@
         ;; Linter https://github.com/jonase/eastwood
         [jonase/eastwood "0.2.6-beta2"]
         ;; Static code search for non-idiomatic code https://github.com/jonase/kibit        
-        [lein-kibit "0.1.6-beta2" :exclusions [org.clojure/clojure]]
+        [lein-kibit "0.1.6" :exclusions [org.clojure/clojure]]
       ]
     }
 
