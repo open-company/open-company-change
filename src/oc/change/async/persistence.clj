@@ -4,7 +4,7 @@
 
   Use of this persistence is through core/async. A message is sent to the `persistence-chan`.
   "
-  (:require [clojure.core.async :as async :refer (>!! <!!)]
+  (:require [clojure.core.async :as async :refer (>! >!! <!)]
             [defun.core :refer (defun-)]
             [taoensso.timbre :as timbre]
             [oc.change.resources.user :as u]
@@ -20,7 +20,11 @@
 ;; ----- Event handling -----
 
 (defun- handle-persistence-message
-  "Handles 3 types of messages: status, seen, and change"
+  "
+  Handles 3 types of messages: status, seen, and change
+
+  NB: Uses 'parked' core.async put `!>` so must be called from inside a go block
+  "
 
   ([message :guard :status]
   ;; Lookup when a specified user saw specified containers and when the specified containers saw change
@@ -34,7 +38,7 @@
           status (map #(apply merge %) (vals (merge-with concat
                                                 (group-by :container-id seens)
                                                 (group-by :container-id changes))))]
-      (>!! watcher/sender-chan {:event [:container/status status]
+      (>! watcher/sender-chan {:event [:container/status status]
                                 :client-id client-id}))))
 
   ([message :guard :seen]
@@ -62,7 +66,7 @@
   (timbre/info "Starting persistence...")
   (async/go (while @persistence-go
     (timbre/debug "Persistence waiting...")
-    (let [message (<!! persistence-chan)]
+    (let [message (<! persistence-chan)]
       (timbre/debug "Processing message on persistence channel...")
       (if (:stop message)
         (do (reset! persistence-go false) (timbre/info "Persistence stopped."))
