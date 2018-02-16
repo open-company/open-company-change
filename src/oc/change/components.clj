@@ -11,16 +11,20 @@
   component/Lifecycle
 
   (start [component]
+    (timbre/info "[http] starting...")
     (let [handler (get-in component [:handler :handler] handler)
           server  (httpkit/run-server handler options)]
       (websockets-api/start)
+      (timbre/info "[http] started")
       (assoc component :http-kit server)))
 
   (stop [{:keys [http-kit] :as component}]
     (if http-kit
       (do
+        (timbre/info "[http] stopping...")
         (http-kit)
         (websockets-api/stop)
+        (timbre/info "[http] stopped")
         (dissoc component :http-kit))
       component)))
  
@@ -28,27 +32,30 @@
   component/Lifecycle
 
   (start [component]
-    (timbre/info "[handler] starting")
+    (timbre/info "[handler] started")
     (assoc component :handler (handler-fn component)))
 
   (stop [component]
+    (timbre/info "[handler] stopped")
     (dissoc component :handler)))
 
 (defrecord AsyncConsumers []
   component/Lifecycle
 
   (start [component]
-    (timbre/info "[async-consumers] starting")
+    (timbre/info "[async-consumers] starting...")
     (persistence/start) ; core.async channel consumer for persisting events
     (watcher/start) ; core.async channel consumer for watched items (containers watched by websockets) events
+    (timbre/info "[async-consumers] started")
     (assoc component :async-consumers true))
 
   (stop [{:keys [async-consumers] :as component}]
     (if async-consumers
       (do
-        (timbre/info "[async-consumers] stopping")
+        (timbre/info "[async-consumers] stopping...")
         (persistence/stop) ; core.async channel consumer for persisting events
         (watcher/stop) ; core.async channel consumer for watched items (containers watched by websockets) events
+        (timbre/info "[async-consumers] stopped")
         (dissoc component :async-consumers))
     component)))
 
