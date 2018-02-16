@@ -23,7 +23,7 @@
   "
   Handles 3 types of messages: status, seen, and change
 
-  NB: Uses 'blocking' core.async put `!!>`, not `parked` core.async put `!>` because even though this
+  NB: Uses 'blocking' core.async put `>!!`, not `parked` core.async put `>!` because even though this
   is called from inside a go block, it's also inside an `async/thread`.
   "
 
