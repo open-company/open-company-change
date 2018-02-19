@@ -1,6 +1,6 @@
 (ns oc.change.api.websockets
   "WebSocket server handler."
-  (:require [clojure.core.async :as async :refer (>!! <!!)]
+  (:require [clojure.core.async :as async :refer (>!! <!)]
             [taoensso.sente :as sente]
             [taoensso.timbre :as timbre]
             [compojure.core :as compojure :refer (defroutes GET POST)]
@@ -139,7 +139,7 @@
   (timbre/info "Starting sender...")
   (async/go (while @sender-go
     (timbre/debug "Sender waiting...")
-    (let [message (<!! watcher/sender-chan)]
+    (let [message (<! watcher/sender-chan)]
       (timbre/debug "Processing message on sender channel...")
       (if (:stop message)
         (do (reset! sender-go false) (timbre/info "Sender stopped."))

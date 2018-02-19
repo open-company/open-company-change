@@ -20,11 +20,12 @@
                                                                       :access-key c/aws-access-key-id
                                                                       :secret-key c/aws-secret-access-key}}})))))
 
-(defn start []
+(defn- start⬆ []
   (alter-var-root #'system component/start))
 
 (defn stop []
-  (alter-var-root #'system (fn [s] (when s (component/stop s)))))
+  (alter-var-root #'system (fn [s] (when s (component/stop s))))
+  (println (str "When you're ready to start the system again, just type: (go)\n")))
 
 (defn go
   
@@ -32,7 +33,7 @@
   
   ([port]
   (init port)
-  (start)
+  (start⬆)
   (app/echo-config port)
   (println (str "Now serving changes from the REPL.\n"
                 "When you're ready to stop the system, just type: (stop)\n"))

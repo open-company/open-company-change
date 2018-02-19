@@ -38,10 +38,10 @@
     ;; NB: encore pulled in from oc.lib
     [com.taoensso/faraday "1.10.0-alpha1" :exclusions [com.amazonaws/aws-java-sdk-dynamodb joda-time com.taoensso/encore]]
     ;; Faraday dependency, not pulled in? https://hc.apache.org/
-    [org.apache.httpcomponents/httpclient "4.5.4"]
+    [org.apache.httpcomponents/httpclient "4.5.5"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.14.8"]
+    [open-company/lib "0.16.0"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -62,7 +62,7 @@
   ;; All profile plugins
   :plugins [
     ;; Common ring tasks https://github.com/weavejester/lein-ring
-    [lein-ring "0.12.2"]
+    [lein-ring "0.12.3"]
     ;; Get environment settings from different sources https://github.com/weavejester/environ
     [lein-environ "1.1.0"]
   ]
@@ -107,7 +107,7 @@
       :plugins [
         ;; Check for code smells https://github.com/dakrone/lein-bikeshed
         ;; NB: org.clojure/tools.cli is pulled in by lein-kibit
-        [lein-bikeshed "0.5.0" :exclusions [org.clojure/tools.cli]] 
+        [lein-bikeshed "0.5.1" :exclusions [org.clojure/tools.cli]] 
         ;; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-checkall "0.1.1"]
         ;; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
