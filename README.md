@@ -138,8 +138,7 @@ lein build
 
 ## Technical Design
 
-The OpenCompany Change Service handles tracking the read and unread status of content resources. The service does
-this somewhat indirectly, at the content container level, *not* at the individual content item level.
+The OpenCompany Change Service handles tracking the seen and unseen status of content resources. The service does this somewhat indirectly, at the content container level, *not* at the individual content item level.
 
 For any given content container, the service knows the time any specific user last viewed that container, or that the
 user has never viewed that container. In addition, the service knows the time that the content in that container was

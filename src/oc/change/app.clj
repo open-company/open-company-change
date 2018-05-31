@@ -74,6 +74,12 @@
 (defn echo-config [port]
   (println (str "\n"
     "Running on port: " port "\n"
+    "Dynamo DB: " c/dynamodb-end-point "\n"
+    "Table prefix: " c/dynamodb-table-prefix "\n"
+    "Container record TTL: " c/container-time-ttl " days\n"
+    "User-container record TTL: " c/user-container-time-ttl " days\n"
+    "AWS SQS change queue: " c/aws-sqs-change-queue "\n"
+    "Hot-reload: " c/hot-reload "\n"
     "Sentry: " c/dsn "\n\n"
     (when c/intro? "Ready to serve...\n"))))
 

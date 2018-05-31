@@ -16,14 +16,14 @@
     ;; Lisp on the JVM http://clojure.org/documentation
     [org.clojure/clojure "1.9.0"]
     ;; Command-line parsing https://github.com/clojure/tools.cli
-    [org.clojure/tools.cli "0.3.5"] 
+    [org.clojure/tools.cli "0.3.7"] 
     ;; Web application library https://github.com/ring-clojure/ring
-    [ring/ring-devel "1.6.3"]
+    [ring/ring-devel "1.7.0-RC1"]
     ;; Web application library https://github.com/ring-clojure/ring
     ;; NB: clj-time pulled in by oc.lib
     ;; NB: joda-time pulled in by oc.lib via clj-time
     ;; NB: commons-codec pulled in by oc.lib
-    [ring/ring-core "1.6.3" :exclusions [clj-time joda-time commons-codec]]
+    [ring/ring-core "1.7.0-RC1" :exclusions [clj-time joda-time commons-codec]]
     ;; CORS library https://github.com/jumblerg/ring.middleware.cors
     [jumblerg/ring.middleware.cors "1.0.1"]
     ;; Ring logging https://github.com/nberger/ring-logger-timbre
@@ -31,7 +31,7 @@
     ;; NB: com.taoensso/timbre pulled in by oc.lib
     [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore com.taoensso/timbre]] 
     ;; Web routing https://github.com/weavejester/compojure
-    [compojure "1.6.0"]
+    [compojure "1.6.1"]
     ;; DynamoDB client https://github.com/ptaoussanis/faraday
     ;; NB: com.amazonaws/aws-java-sdk-dynamodb is pulled in by amazonica
     ;; NB: joda-time is pulled in by clj-time
@@ -41,7 +41,7 @@
     [org.apache.httpcomponents/httpclient "4.5.5"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.16.0"]
+    [open-company/lib "0.16.6"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -62,7 +62,7 @@
   ;; All profile plugins
   :plugins [
     ;; Common ring tasks https://github.com/weavejester/lein-ring
-    [lein-ring "0.12.3"]
+    [lein-ring "0.12.4"]
     ;; Get environment settings from different sources https://github.com/weavejester/environ
     [lein-environ "1.1.0"]
   ]
@@ -80,9 +80,9 @@
         ;; NB: clj-time is pulled in by oc.lib
         ;; NB: joda-time is pulled in by oc.lib via clj-time
         ;; NB: commons-codec pulled in by oc.lib
-        [midje "1.9.2-alpha2" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]] 
+        [midje "1.9.2-alpha3" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]] 
         ;; Clojure WebSocket client https://github.com/cch1/http.async.client
-        [http.async.client "1.2.0"]
+        [http.async.client "1.3.0"]
         ;; Test Ring requests https://github.com/weavejester/ring-mock
         [ring-mock "0.1.5"]
       ]
@@ -90,7 +90,7 @@
         ;; Example-based testing https://github.com/marick/lein-midje
         [lein-midje "3.2.1"]
         ;; Linter https://github.com/jonase/eastwood
-        [jonase/eastwood "0.2.6-beta2"]
+        [jonase/eastwood "0.2.6"]
         ;; Static code search for non-idiomatic code https://github.com/jonase/kibit        
         [lein-kibit "0.1.6" :exclusions [org.clojure/clojure]]
       ]
