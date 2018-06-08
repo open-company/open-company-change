@@ -36,7 +36,7 @@
   (far/list-tables c/dynamodb-opts)
 
   (far/delete-table c/dynamodb-opts u/table-name)
-  (aprint 
+  (aprint
     (far/create-table c/dynamodb-opts
       u/table-name
       [:user_id :s]

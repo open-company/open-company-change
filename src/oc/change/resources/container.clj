@@ -35,7 +35,7 @@
   (far/list-tables c/dynamodb-opts)
 
   (far/delete-table c/dynamodb-opts container/table-name)
-  (aprint 
+  (aprint
     (far/create-table c/dynamodb-opts
       container/table-name
       [:container_id :s]
