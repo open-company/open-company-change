@@ -49,5 +49,5 @@
 
 ;; ----- Change Service -----
 
-(defonce container-time-ttl 30) ; days
-(defonce user-container-time-ttl 30) ; days
+(defonce change-ttl 30) ; days
+(defonce seen-ttl 30) ; days

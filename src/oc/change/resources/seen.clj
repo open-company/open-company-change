@@ -1,4 +1,4 @@
-(ns oc.change.resources.user
+(ns oc.change.resources.seen
   "Store triples of: user-id, container-id and timestamp"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
@@ -7,7 +7,7 @@
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]))
 
-(def table-name (keyword (str c/dynamodb-table-prefix "_user_container_time")))
+(def table-name (keyword (str c/dynamodb-table-prefix "_seen")))
 
 (schema/defn ^:always-validate seen!
   [user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID seen-at :- lib-schema/ISO8601]
@@ -15,7 +15,7 @@
       :user_id user-id
       :container_id container-id
       :seen_at seen-at
-      :ttl (coerce/to-long (time/plus (time/now) (time/days c/user-container-time-ttl)))})
+      :ttl (coerce/to-long (time/plus (time/now) (time/days c/seen-ttl)))})
   true)
 
 (schema/defn ^:always-validate seen :- [{:container-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]

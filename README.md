@@ -171,39 +171,43 @@ time of the newest content in that container and the last time the user saw that
 
 ### DynamoDB Schema
 
-The DynamoDB schema is quite simple and is made up of two tables: `container_time` and `user_container_time`. To
-support multiple environments, these tables are prefixed with an environment name, such as `staging_container_time` or
-`production_user_container_time`.
+The DynamoDB schema is quite simple and is made up of 2 tables: `change`, and `seen`. To
+support multiple environments, these tables are prefixed with an environment name, such as `staging_change` or
+`production_seen`.
 
-The `container_time` table has a string partition/primary key called `container_id`. A full item in the table is:
+The `change` table has a string partition/primary key called `container_id`. A full item in the table is:
 
 ```
 {
   "container_id": 4hex-4hex-4hex UUID,
+  "item_id":  4hex-4hex-4hex UUID,
   "change_at": ISO8601,
   "ttl": epoch-time
 }
 ```
 
-The meaning of each item is that the container specified by the `container_id` last saw a creation event at the
+The meaning of each item above is that the container specified by the `container_id` saw a creation event on `item_id` at the
 `change_at` time, and this record will expire and be removed from DynamoDB at `ttl` time (configured by
-`container-time-ttl` in `config.clj`.
+`change-ttl` in `config.clj`.
 
-The `user_container_time` table has a string partition/primary key called `user_id`, and a partition/sort key called
+The `seen` table has a string partition/primary key called `user_id`, and a partition/sort key called
 `container_id`. A full item in the table is:
 
 ```
 {
   "user_id": 4hex-4hex-4hex UUID,
   "container_id": 4hex-4hex-4hex UUID,
+  "item_id": 4hex-4hex-4hex UUID,
   "seen_at": ISO8601,
   "ttl": epoch-time
 }
 ```
 
-The meaning of each item is that the user specified by the `user-id` last saw the container specified by the
+The meaning of each item above is that the user specified by the `user-id` last saw the container specified by the
 `container-id` at the `change-at` time, and this record will expire and be removed from DynamoDB at `ttl` time
-(configured by `user-container-time-ttl` in `config.clj`.
+(configured by `seen-ttl` in `config.clj`.
+
+Optionally, items in the `seen` table will also have an `item_id` which indicates they did not see the entire container, but just the item specified by `item_id`.
 
 ### SQS Messaging
 
