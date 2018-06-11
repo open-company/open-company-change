@@ -23,6 +23,8 @@
     [oc.change.api.websockets :as websockets-api]
     [oc.change.async.persistence :as persistence]))
 
+(def draft-board-uuid "0000-0000-0000")
+
 ;; ----- Unhandled Exceptions -----
 
 ;; Send unhandled exceptions to log and Sentry
@@ -41,23 +43,42 @@
 (defn sqs-handler
   "Handle an incoming SQS message to the change service."
   [msg done-channel]
-  (let [msg-body (clojure.walk/keywordize-keys (json/parse-string (:body msg)))
+  (let [body (clojure.walk/keywordize-keys (json/parse-string (:body msg)))
+        msg-body (clojure.walk/keywordize-keys (json/parse-string (:Message body)))
         error (if (:test-error msg-body) (/ 1 0) false) ; a message testing Sentry error reporting
-        change-type (keyword (:change-type msg-body))
+        change-type (keyword (:notification-type msg-body))
         resource-type (keyword (:resource-type msg-body))
-        container-id (:container-id msg-body)]
+        container-id (or (-> msg-body :board :uuid) ; entry
+                         (-> msg-body :org :uuid) ; board
+                         (-> msg-body :content :uuid)) ;org
+        change-at (or (-> msg-body :content :new :updated-at) ; add / update
+                      (:notification-at msg-body)) ; delete
+        draft? (or (= container-id draft-board-uuid)
+                   (= "draft" (or (-> msg-body :content :new :status)
+                              (and (= change-type "delete") (-> msg-body :content :old :status)))))]
     (timbre/info "Received message from SQS:" msg-body)
     (if (and
+          (not draft?)
           (or (= change-type :add) (= change-type :update) (= change-type :delete))
           (or (= resource-type :entry) (= resource-type :board)))
       (do
-        (>!! persistence/persistence-chan (assoc msg-body :change true))
+        (>!! persistence/persistence-chan (merge msg-body {:change true
+                                                           :change-at change-at
+                                                           :container-id container-id}))
         (>!! watcher/watcher-chan {:send true
                                    :watch-id container-id
                                    :event :container/change
                                    :payload {:container-id container-id
-                                             :change-at (:change-at msg-body)}}))
-      (timbre/warn "Unknomwn message from SQS:" change-type resource-type)))
+                                             :change-at change-at}}))
+      (cond
+        (= resource-type :org)
+        (timbre/warn "Unhandled org message from SQS:" change-type resource-type)
+ 
+        draft?
+        (timbre/info "Skipping draft message from SQS:" change-type resource-type)
+
+        :else
+        (timbre/warn "Unknown message from SQS:" change-type resource-type))))
   (sqs/ack done-channel msg))
 
 ;; ----- Request Routing -----
@@ -74,6 +95,12 @@
 (defn echo-config [port]
   (println (str "\n"
     "Running on port: " port "\n"
+    "Dynamo DB: " c/dynamodb-end-point "\n"
+    "Table prefix: " c/dynamodb-table-prefix "\n"
+    "Container record TTL: " c/container-time-ttl " days\n"
+    "User-container record TTL: " c/user-container-time-ttl " days\n"
+    "AWS SQS change queue: " c/aws-sqs-change-queue "\n"
+    "Hot-reload: " c/hot-reload "\n"
     "Sentry: " c/dsn "\n\n"
     (when c/intro? "Ready to serve...\n"))))
 
@@ -109,7 +136,7 @@
     component/start)
 
   ;; Echo config information
-  (println (str "\n" 
+  (println (str "\n"
     (when c/intro? (str (slurp (clojure.java.io/resource "ascii_art.txt")) "\n"))
     "OpenCompany Change Service\n"))
   (echo-config port))

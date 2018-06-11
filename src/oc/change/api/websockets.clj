@@ -20,7 +20,7 @@
 (reset! sente/debug-mode?_ (not c/prod?))
 
 (let [{:keys [ch-recv send-fn connected-uids ajax-post-fn ajax-get-or-ws-handshake-fn]}
-      (sente/make-channel-socket-server! (get-sch-adapter) 
+      (sente/make-channel-socket-server! (get-sch-adapter)
         {:packer :edn
          :user-id-fn (fn [ring-req] (:client-id ring-req)) ; use the client id as the user id
          :csrf-token-fn (fn [ring-req] (:client-id ring-req))
@@ -52,7 +52,7 @@
 (defmethod -event-msg-handler
   ;; Default/fallback case (no other matching handler)
   :default
-  
+
   [{:keys [event id ?reply-fn]}]
   (timbre/debug "[websocket] unhandled event" event "for" id)
   (when ?reply-fn
@@ -60,7 +60,7 @@
 
 (defmethod -event-msg-handler
   :chsk/handshake
-  
+
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (timbre/trace "[websocket] chsk/handshake" event id ?data)
   (when ?reply-fn
@@ -74,7 +74,7 @@
 (defmethod -event-msg-handler
   ;; Client connected
   :chsk/uidport-open
-  
+
   [{:as ev-msg :keys [event id ring-req]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)]
@@ -83,7 +83,7 @@
 (defmethod -event-msg-handler
   ;; Client disconnected
   :chsk/uidport-close
-  
+
   [{:as ev-msg :keys [event id ring-req]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)]
@@ -92,7 +92,7 @@
 
 (defmethod -event-msg-handler
   :container/watch
-  
+
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
@@ -109,7 +109,7 @@
 
 (defmethod -event-msg-handler
   :container/seen
-  
+
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
@@ -195,14 +195,14 @@
   (require '[http.async.client :as http])
   (require '[oc.lib.time :as oc-time])
   (require '[oc.change.resources.container :as container])
-  
+
   (def ws-conn (atom nil))
 
   (def url "ws://localhost:3006/change-socket/user/1234-abcd-1234?client-id=1")
 
   (defn on-open [ws]
     (println "Connected to WebSocket."))
-  
+
   (defn on-close [ws code reason]
     (println "Connection to WebSocket closed.\n"
            (format "[%s] %s" code reason)))
@@ -217,7 +217,7 @@
     "Return a 6 character fragment from a UUID e.g. 51ab4c86"
     []
     (s/join "" (take 2 (rest (s/split (str (java.util.UUID/randomUUID)) #"-")))))
-  
+
   (defn send-message [msg-type msg-body]
     (println "Sending...")
     (http/send @ws-conn :text (str "+" (pr-str [[msg-type msg-body] (message-stamp)])))
@@ -235,7 +235,7 @@
         ; from ending, so that the message-handling function will continue to
         ; print messages to STDOUT
         (reset! ws-conn ws)
-        (loop [] 
+        (loop []
           (if @ws-conn
             (recur)
             (println "Client stopped!")))))))

@@ -105,6 +105,10 @@ SQS queue name:
 You can also override these settings with environmental variables in the form of `AWS_ACCESS_KEY_ID` and
 `AWS_SECRET_ACCESS_KEY`, etc. Use environmental variables to provide production secrets when running in production.
 
+You will also need to subscribe the SQS queue to the storage SNS topic. To do this you will need to go to the AWS console and follow these instruction:
+
+Go to the AWS SQS Console and select the change queue configured above. From the 'Queue Actions' dropdown, select 'Subscribe Queue to SNS Topic'. Select the SNS topic you've configured your Storage Service instance to publish to, and click the 'Subscribe' button.
+
 
 ## Usage
 
@@ -138,8 +142,7 @@ lein build
 
 ## Technical Design
 
-The OpenCompany Change Service handles tracking the read and unread status of content resources. The service does
-this somewhat indirectly, at the content container level, *not* at the individual content item level.
+The OpenCompany Change Service handles tracking the seen and unseen status of content resources. The service does this somewhat indirectly, at the content container level, *not* at the individual content item level.
 
 For any given content container, the service knows the time any specific user last viewed that container, or that the
 user has never viewed that container. In addition, the service knows the time that the content in that container was
@@ -205,16 +208,18 @@ The meaning of each item is that the user specified by the `user-id` last saw th
 ### SQS Messaging
 
 The change service consumes SQS messages in JSON format from the change queue. These messages inform the change service
-about new content in a container. The `user-id` is the UUID of the user that created the content. This is used so
+about changes. The `user` is the user that made the change. This is used so
 consumers of this service can ignore events from specific users (such as from themselves).
 
 ```
 {
-  "change-type": "add|update|delete"
-  "resource-type": "board|entry"
-  "container-id": 4hex-4hex-4hex UUID,
-  "content-id": 4hex-4hex-4hex UUID,
-  "change-at": ISO8601,
+ :notification-type "add|update|delete",
+ :notification-at ISO8601,
+ :user {...},
+ :org {...},
+ :board {...},
+ :content {:new {...},
+           :old {...}}
 }
 ```
 

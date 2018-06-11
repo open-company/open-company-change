@@ -27,7 +27,7 @@
         (timbre/info "[http] stopped")
         (dissoc component :http-kit))
       component)))
- 
+
 (defrecord Handler [handler-fn]
   component/Lifecycle
 
@@ -67,7 +67,7 @@
     :sqs-consumer (sqs/sqs-listener sqs-consumer)
     :handler (component/using
                 (map->Handler {:handler-fn (:handler-fn httpkit)})
-                [])    
+                [])
     :server  (component/using
                 (map->HttpKit {:options {:port (:port httpkit)}})
                 [:handler])))
@@ -90,7 +90,7 @@
                                                   :sqs-creds {
                                                     :access-key c/aws-access-key-id
                                                     :secret-key c/aws-secret-access-key}}}))
-    
+
   (def instance (component/start change-service))
 
   ;; if you need to change something, just stop the service
