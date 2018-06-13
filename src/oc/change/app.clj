@@ -63,8 +63,10 @@
           (or (= resource-type :entry) (= resource-type :board)))
       (do
         (>!! persistence/persistence-chan (merge msg-body {:change true
+                                                           :change-type change-type
                                                            :change-at change-at
-                                                           :container-id container-id}))
+                                                           :container-id container-id
+                                                           :author-id (-> msg-body :user :uuid)}))
         (>!! watcher/watcher-chan {:send true
                                    :watch-id container-id
                                    :event :container/change

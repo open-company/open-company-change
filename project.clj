@@ -140,8 +140,8 @@
                  '[oc.lib.db.common :as db-common]
                  '[oc.change.app :refer (app)]
                  '[oc.change.config :as config]
-                 '[oc.change.resources.user :as u]
-                 '[oc.change.resources.container :as container]
+                 '[oc.change.resources.seen :as seen]
+                 '[oc.change.resources.change :as change]
                  )
       ]
     }]

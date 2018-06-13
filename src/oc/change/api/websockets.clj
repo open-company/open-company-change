@@ -194,7 +194,7 @@
 
   (require '[http.async.client :as http])
   (require '[oc.lib.time :as oc-time])
-  (require '[oc.change.resources.container :as container])
+  (require '[oc.change.resources.change :as change])
 
   (def ws-conn (atom nil))
 
@@ -252,12 +252,12 @@
   ; 3 - change, then seen
   ; 4 - seen, then changed
   ; 5 - never seen or change
-  (container/change! "1111-1111-1111" (oc-time/current-timestamp))
+  (change/store! "1111-1111-1111" (oc-time/current-timestamp))
   (send-message :container/seen {:container-id "2222-2222-2222" :seen-at (oc-time/current-timestamp)})
   (container/change! "3333-3333-3333" (oc-time/current-timestamp))
   (send-message :container/seen {:container-id "3333-3333-3333" :seen-at (oc-time/current-timestamp)})
   (send-message :container/seen {:container-id "4444-4444-4444" :seen-at (oc-time/current-timestamp)})
-  (container/change! "4444-4444-4444" (oc-time/current-timestamp))
+  (change/store! "4444-4444-4444" (oc-time/current-timestamp))
 
   (send-message :container/watch ["1111-1111-1111" "2222-2222-2222" "3333-3333-3333" "4444-4444-4444" "5555-5555-5555"])
 

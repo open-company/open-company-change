@@ -7,9 +7,9 @@
   (:require [clojure.core.async :as async :refer (>!! <!)]
             [defun.core :refer (defun-)]
             [taoensso.timbre :as timbre]
-            [oc.change.resources.user :as u]
             [oc.lib.async.watcher :as watcher]
-            [oc.change.resources.container :as container]))
+            [oc.change.resources.seen :as seen]
+            [oc.change.resources.change :as change]))
 
 ;; ----- core.async -----
 
@@ -34,8 +34,8 @@
         container-ids (:container-ids message)
         client-id (:client-id message)]
     (timbre/info "Status request for:" container-ids "by:" user-id "/" client-id)
-    (let [seens (u/seen user-id container-ids)
-          changes (container/change container-ids)
+    (let [seens (seen/retrieve user-id container-ids)
+          changes (change/retrieve container-ids)
           status (map #(apply merge %) (vals (merge-with concat
                                                 (group-by :container-id seens)
                                                 (group-by :container-id changes))))]
@@ -48,14 +48,14 @@
         container-id (:container-id message)
         seen-at (:seen-at message)]
     (timbre/info "Seen request for:" user-id "on:" container-id "at:" seen-at)
-    (u/seen! user-id container-id seen-at)))
+    (seen/store! user-id container-id seen-at)))
 
   ([message :guard :change]
   ; Persist that a specified user saw a specified container at a specified time
   (let [container-id (:container-id message)
         change-at (:change-at message)]
     (timbre/info "Change request for:" container-id "at:" change-at)
-    (container/change! container-id change-at)))
+    (change/store! container-id change-at)))
 
   ([message]
   (timbre/warn "Unknown request in persistence channel" message)))

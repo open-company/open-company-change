@@ -18,15 +18,13 @@
       :ttl (coerce/to-long (time/plus (time/now) (time/days c/change-ttl)))})
   true)
 
-(schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :change-at lib-schema/ISO8601}]
-  [container-ids :- [lib-schema/UniqueID]]
-  (if (empty? container-ids)
-    []
-    (->> (far/batch-get-item c/dynamodb-opts {table-name {
-            :prim-kvs (map #(hash-map :container_id %) container-ids)
-            :attrs [:container_id :item_id :change_at]}})
-      table-name
-      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at})))))
+(schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :change-at lib-schema/ISO8601}]
+  [container :- (schema/conditional sequential? [lib-schema/UniqueID] :else lib-schema/UniqueID)]
+  (if (sequential? container)
+    (flatten (pmap retrieve container))
+    (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]})
+      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
+      (map #(select-keys % [:container-id :item-id :change-at])))))
 
 (comment
 
@@ -35,23 +33,22 @@
 
   (far/list-tables c/dynamodb-opts)
 
-  (far/delete-table c/dynamodb-opts container/table-name)
+  (far/delete-table c/dynamodb-opts change/table-name)
   (aprint
     (far/create-table c/dynamodb-opts
-      container/table-name
+      change/table-name
       [:container_id :s]
-      {:throughput {:read 1 :write 1}
+      {:range-keydef [:item_id :s]
+       :throughput {:read 1 :write 1}
        :block? true}))
 
-  (aprint (far/describe-table  c/dynamodb-opts container/table-name))
+  (aprint (far/describe-table c/dynamodb-opts change/table-name))
 
   (change/store! "1111-1111-1111" "2222-2222-2222" (oc-time/current-timestamp))
   (change/store! "1111-1111-1111" "3333-3333-3333" (oc-time/current-timestamp))
+  (change/retrieve "1111-1111-1111")
 
-  (change/retrieve ["1111-1111-1111"])
-
-  (change/store! "1ab1-2ab2-3ab3" (oc-time/current-timestamp))
-
-  ;(u/change ["1111-1111-1111" "1ab1-2ab2-3ab3" "5678-edcb-5678"])
+  (change/store! "4444-4444-4444" "5555-5555-5555" (oc-time/current-timestamp))
+  (change/retrieve ["1111-1111-1111" "4444-4444-4444"])
 
 )
