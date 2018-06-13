@@ -17,6 +17,24 @@
 
 (defonce persistence-go (atom true))
 
+;; ----- Utility methods -----
+
+(defun- persist
+  
+  ;; Add an entry
+  ([:add :entry container-id item-id author-id change-at]
+  (timbre/info "Persisting entry change on:" item-id "for container:" container-id "and author:" author-id)
+  (pmap #(change/store! % item-id change-at) [container-id author-id]))
+
+  ;; Delete an entry
+
+  ;; Delete a board
+
+
+  ;; Else
+  ([_op _resource _container _item _author _change]
+  (timbre/trace "No persistence needed.")))
+
 ;; ----- Event handling -----
 
 (defun- handle-persistence-message
@@ -29,7 +47,7 @@
 
   ([message :guard :status]
   ;; Lookup when a specified user saw specified containers and when the specified containers saw change
-  ;; Send the merger of the 2 (by contianer-id) to the sender channel as a status message
+  ;; Send the merger of the 2 (by container-id) to the sender channel as a status message
   (let [user-id (:user-id message)
         container-ids (:container-ids message)
         client-id (:client-id message)]
@@ -51,11 +69,16 @@
     (seen/store! user-id container-id seen-at)))
 
   ([message :guard :change]
-  ; Persist that a specified user saw a specified container at a specified time
+  ; Persist that a container received a new item at a specific time
   (let [container-id (:container-id message)
+        item-id (:item-id message)
+        resource-type (:resource-type message)
+        change-type (:change-type message)
+        author-id (:author-id message)
         change-at (:change-at message)]
-    (timbre/info "Change request for:" container-id "at:" change-at)
-    (change/store! container-id change-at)))
+    (timbre/info resource-type change-type "request on:" item-id  "in:" container-id
+                                           "by:" author-id "at:" change-at)
+    (persist change-type resource-type container-id item-id author-id change-at)))
 
   ([message]
   (timbre/warn "Unknown request in persistence channel" message)))
