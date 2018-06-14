@@ -118,6 +118,21 @@
     (timbre/info "[websocket] container/seen for:" container-id "at:" seen-at "by:" user-id "/" client-id)
     (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id :seen-at seen-at})))
 
+(defmethod -event-msg-handler
+  :item/seen
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        container-id (:container-id ?data)
+        item-id (:item-id ?data)
+        publisher-id (:publisher-id ?data)
+        seen-at (:seen-at ?data)]
+    (timbre/info "[websocket] item/seen for:" item-id "published by:" publisher-id "in:" container-id
+                                        "at:" seen-at "by:" user-id "/" client-id)
+    (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id
+                                       :item-id item-id :publisher-id publisher-id :seen-at seen-at})))
+
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
 (defonce router_ (atom nil))
@@ -242,8 +257,22 @@
 
   (connect-client)
 
-  (send-message :container/seen {:container-id "1a1b-2a2b-3a3b" :seen-at (oc-time/current-timestamp)})
+  ;; Wait until Carrot Party message received back, then
 
+  ;; Send a message indicating the user has seen the whole container
+  (send-message :container/seen {:container-id "1a1b-2a2b-3a3b" :seen-at (oc-time/current-timestamp)})
+  
+  ;; Check the DB that the record is there
+  (seen/retrieve "1234-abcd-1234")
+  
+  ;; Send a message indicating the user has seen a specific item in the container
+  (send-message :item/seen {:container-id "1a1b-2a2b-3a3b" :item-id "eeee-eeee-eeee" :publisher-id "aaaa-aaaa-aaaa"
+    :seen-at (oc-time/current-timestamp)})
+
+  ;; Check the DB that the records are there
+  (seen/retrieve "1234-abcd-1234")
+
+  ;; Check
   (send-message :container/watch ["1a1b-2a2b-3a3b"])
 
   ;; Test

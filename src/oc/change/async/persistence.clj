@@ -64,10 +64,15 @@
   ;; Persist that a specified user saw a specified container at a specified time
   (let [user-id (:user-id message)
         container-id (:container-id message)
+        item-id (:item-id message)
+        publisher-id (:publisher-id message)
         seen-at (:seen-at message)]
-    (timbre/info "Seen request for:" user-id "on:" container-id "at:" seen-at)
-    (seen/store! user-id container-id seen-at)))
-
+    (timbre/info "Seen request for user:" user-id "on:" container-id "at:" seen-at)
+    (if (and item-id publisher-id)
+      ;; upsert an item seen entry for the container and the author
+      (pmap #(seen/store! user-id % item-id seen-at) [item-id publisher-id]) 
+      ;; upsert a seen entry for the container (container here may be the author)
+      (seen/store! user-id container-id seen-at)))) 
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time
   (let [container-id (:container-id message)
