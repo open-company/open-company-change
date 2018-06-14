@@ -1,4 +1,8 @@
-Handle container status messages.
+Additional info in entry/container change push to the client.
+
+Delete board.
+
+Delete item.
 
 Tests
 All permutations of:
@@ -7,6 +11,7 @@ Org/Board/Entry
 
 Use Faradays ensure-table at startup to ensure tables exist
 PR
+
 
 Finish tech. design of WRT in GDoc
 Branch from PR for WRT from AP-SEEN

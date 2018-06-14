@@ -30,10 +30,44 @@
 
   ;; Delete a board
 
-
   ;; Else
   ([_op _resource _container _item _author _change]
   (timbre/trace "No persistence needed.")))
+
+(defn- unseen-items-for [container-id all-changes all-seens]
+  (let [changes (filter #(= container-id (:container-id %)) all-changes) ; only changes for this container-id
+        changed-items (set (map :item-id changes)) ; item ids of the changes for this container
+        seens (filter #(= container-id (:container-id %)) all-seens) ; only seens for this container-id
+        seen-items (set (map :item-id seens))] ; item ids seen in the container
+    (vec (clojure.set/difference changed-items seen-items))))
+
+(defn status-for
+  "
+
+  Given a set of changes to items in containers...
+
+  Changes:
+  {:container-id '1111-1111-1111', :item-id '2222-2222-2222', :change-at '2018-06-10T14:49:50.883Z'}
+  {:container-id '1111-1111-1111', :item-id '3333-3333-3333', :change-at '2018-06-11T14:49:50.986Z'}
+  {:container-id '4444-4444-4444', :item-id '5555-5555-5555', :change-at '2018-06-12T14:49:57.107Z'})
+
+  And a set of seen events for the user (where '9999-9999-9999' means they saw everything in the container)...
+
+  Seens:
+  {:container-id '1111-1111-1111', :item-id '2222-2222-2222', :seen-at '2018-06-11T11:23:51.395Z'}
+  {:container-id '4444-4444-4444', :item-id '9999-9999-9999', :seen-at '2018-06-13T11:23:51.395Z'}
+
+  Returns a status for each container with the changes that haven't been seen....
+
+  Status:
+  {:container-id '1111-1111-1111' :unseen ['3333-3333-3333']}
+  {:container-id '4444-4444-4444' :unseen []}
+
+  In the above example, item '2222-2222-2222' was seen, item '3333-3333-3333' was not, and item '5555-5555-5555'
+  was seen because the whole '4444-4444-4444' container was seen.
+  "
+  [container-ids changes seens]
+  (pmap #(hash-map :container-id % :unseen (unseen-items-for % changes seens)) container-ids))
 
 ;; ----- Event handling -----
 
@@ -46,17 +80,15 @@
   "
 
   ([message :guard :status]
-  ;; Lookup when a specified user saw specified containers and when the specified containers saw change
+  ;; Lookup when a specified user saw specified containers and when the specified containers saw changes
   ;; Send the merger of the 2 (by container-id) to the sender channel as a status message
   (let [user-id (:user-id message)
         container-ids (:container-ids message)
         client-id (:client-id message)]
     (timbre/info "Status request for:" container-ids "by:" user-id "/" client-id)
-    (let [seens (seen/retrieve user-id container-ids)
+    (let [seens (filter #(some (fn [x] (= x (:container-id %))) container-ids) (seen/retrieve user-id))
           changes (change/retrieve container-ids)
-          status (map #(apply merge %) (vals (merge-with concat
-                                                (group-by :container-id seens)
-                                                (group-by :container-id changes))))]
+          status (status-for container-ids changes seens)]
       (>!! watcher/sender-chan {:event [:container/status status]
                                 :client-id client-id}))))
 
@@ -73,6 +105,7 @@
       (pmap #(seen/store! user-id % item-id seen-at) [item-id publisher-id]) 
       ;; upsert a seen entry for the container (container here may be the author)
       (seen/store! user-id container-id seen-at)))) 
+
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time
   (let [container-id (:container-id message)
