@@ -115,6 +115,22 @@
       ;; upsert a seen entry for the container (container here may be the author)
       (seen/store! user-id container-id seen-at)))) 
 
+  ([message :guard :read]
+  ;; Persist that a specified user read a specified item
+  (let [org-id (:org-id message)
+        user-id (:user-id message)
+        container-id (:container-id message)
+        item-id (:item-id message)
+        user-name (:name message)
+        avatar-url (:avatar-url message)
+        read-at (:read-at message)]
+    (timbre/info "Read request for user:" user-id "on:" container-id "at:" seen-at)
+    (if (and item-id publisher-id)
+      ;; upsert an item seen entry for the container and the author
+      (pmap #(seen/store! user-id % item-id seen-at) [item-id publisher-id]) 
+      ;; upsert a seen entry for the container (container here may be the author)
+      (seen/store! user-id container-id seen-at)))) 
+
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time
   (let [container-id (:container-id message)

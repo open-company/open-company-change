@@ -142,6 +142,7 @@
                  '[oc.change.config :as config]
                  '[oc.change.resources.seen :as seen]
                  '[oc.change.resources.change :as change]
+                 '[oc.change.resources.read :as read]
                  )
       ]
     }]

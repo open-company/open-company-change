@@ -133,6 +133,23 @@
     (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id
                                        :item-id item-id :publisher-id publisher-id :seen-at seen-at})))
 
+(defmethod -event-msg-handler
+  :item/read
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-id (:org-id ?data)
+        container-id (:container-id ?data)
+        item-id (:item-id ?data)
+        user-name (:name ?data)
+        avatar-url (:avatar-url ?data)
+        read-at (:read-at ?data)]
+    (timbre/info "[websocket] item/read for:" item-id "in:" container-id
+                                        "at:" read-at "by:" user-id "/" client-id)
+    (>!! persistence/persistence-chan {:read true :user-id user-id :container-id container-id :org-id org-id
+                                       :item-id item-id :name user-name :avatar-url avatar-url :read-at read-at})))
+
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
 (defonce router_ (atom nil))
