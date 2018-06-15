@@ -34,16 +34,25 @@
   ([_op _resource _container _item _author _change]
   (timbre/trace "No persistence needed.")))
 
-(defn- unseen-items-for [container-id all-changes all-seens]
+(defn- unseen-items-for
+  "
+  Implements the unseen item logic based on changes in the container, when the container was seen, and when
+  individual items were seen.
+  "
+  [container-id all-changes all-seens]
   (let [changes (filter #(= container-id (:container-id %)) all-changes) ; only changes for this container-id
-        changed-items (set (map :item-id changes)) ; item ids of the changes for this container
         seens (filter #(= container-id (:container-id %)) all-seens) ; only seens for this container-id
+        container-seen (some #(when (= (:item-id %) seen/entire-container) (:seen-at %)) seens) ; container seen at
+        new-changes (if container-seen
+                          (filter #(pos? (compare (:change-at %) container-seen)) changes)
+                          changes)
+        changed-items (set (map :item-id new-changes)) ; item ids of the changes for this container
         seen-items (set (map :item-id seens))] ; item ids seen in the container
+    ; return the differences newly changed items & already seen items
     (vec (clojure.set/difference changed-items seen-items))))
 
 (defn status-for
   "
-
   Given a set of changes to items in containers...
 
   Changes:
