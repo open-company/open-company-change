@@ -1,5 +1,5 @@
 (ns oc.change.resources.change
-  "Store tuples of: container-id, item-id and change timestamp"
+  "Store tuples of: container-id, item-id and change timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
             [clj-time.core :as time]

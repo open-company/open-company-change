@@ -1,5 +1,5 @@
 (ns oc.change.resources.seen
-  "Store triples of: user-id, container-id and timestamp"
+  "Store tuples of: user-id, container-id, item-id and timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
             [clj-time.core :as time]

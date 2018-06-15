@@ -186,11 +186,12 @@ The `change` table has a string partition/primary key called `container_id` and 
 
 The meaning of each item above is that the container specified by the `container_id` saw a creation event on `item_id` at the `change_at` time, and this record will expire and be removed from DynamoDB at `ttl` time (configured by `change_ttl` in `config.clj`.
 
-The `seen` table has a string partition/primary key called `user_id`, and a sort key called `container_id`. A full item in the table is:
+The `seen` table has a string partition/primary key called `user_id`, and a sort key called `container_item_id`. A full item in the table is:
 
 ```
 {
   "user_id": 4hex-4hex-4hex UUID,
+  "container_item_id": 4hex-4hex-4hex-4hex-4hex-4hex UUID,
   "container_id": 4hex-4hex-4hex UUID,
   "item_id": 4hex-4hex-4hex UUID,
   "seen_at": ISO8601,
