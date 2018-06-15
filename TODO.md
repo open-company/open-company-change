@@ -4,7 +4,7 @@ Delete board.
 
 Delete item.
 
-Tests
+Test
 All permutations of:
 Add/Updated/Delete
 Org/Board/Entry
