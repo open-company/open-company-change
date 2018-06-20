@@ -76,6 +76,7 @@
   was seen because the whole '4444-4444-4444' container was seen.
   "
   [container-ids changes seens]
+  (timbre/debug "Check status for containers:" container-ids "with changes:" (vec changes) "and seens:" (vec seens))
   (pmap #(hash-map :container-id % :unseen (unseen-items-for % changes seens)) container-ids))
 
 ;; ----- Event handling -----
@@ -95,7 +96,7 @@
         container-ids (:container-ids message)
         client-id (:client-id message)]
     (timbre/info "Status request for:" container-ids "by:" user-id "/" client-id)
-    (let [seens (filter #(some (fn [x] (= x (:container-id %))) container-ids) (seen/retrieve user-id))
+    (let [seens (filter #((set container-ids) (:container-id %)) (seen/retrieve user-id))
           changes (change/retrieve container-ids)
           status (status-for container-ids changes seens)]
       (>!! watcher/sender-chan {:event [:container/status status]
@@ -111,9 +112,15 @@
     (timbre/info "Seen request for user:" user-id "on:" container-id "at:" seen-at)
     (if (and item-id publisher-id)
       ;; upsert an item seen entry for the container and the author
-      (pmap #(seen/store! user-id % item-id seen-at) [item-id publisher-id]) 
-      ;; upsert a seen entry for the container (container here may be the author)
-      (seen/store! user-id container-id seen-at)))) 
+      (pmap #(seen/store! user-id % item-id seen-at) [container-id publisher-id]) 
+      ;; upsert a seen entry for the container (NB: container here may also be a user, the author)
+      (seen/store! user-id container-id seen-at))
+    ;; recurse after updating the message so it seems the client asked for status on the seen container...
+    ;; in this way the client will receive an updated container/status message for this container
+    (handle-persistence-message (-> message
+                                  (dissoc :seen)
+                                  (assoc :status true)
+                                  (assoc :container-ids [container-id]))))) 
 
   ([message :guard :read]
   ;; Persist that a specified user read a specified item
