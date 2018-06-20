@@ -68,7 +68,8 @@
                       (:notification-at msg-body)) ; delete
         draft? (or (= container-id draft-board-uuid)
                    (= "draft" (or (-> msg-body :content :new :status)
-                              (and (= change-type "delete") (-> msg-body :content :old :status)))))]
+                              (and (= change-type "delete") (-> msg-body :content :old :status)))))
+        user-id (-> msg-body :user :user-id)]
     (timbre/info "Received message from SQS:" msg-body)
     (if (and
           (not draft?)
@@ -84,14 +85,16 @@
                                                            :container-id container-id
                                                            :resource-type resource-type
                                                            :item-id item-id
-                                                           :author-id (-> msg-body :user :user-id)}))
+                                                           :author-id user-id}))
         
         (timbre/info "Alerting watcher of add/update/delete msg from SQS.")
         (>!! watcher/watcher-chan {:send true
                                    :watch-id container-id
-                                   :event :container/change
+                                   :event (if (= resource-type :entry) :item/change :container/change)
                                    :payload {:container-id container-id
+                                             :change-type change-type
                                              :item-id item-id
+                                             :user-id user-id
                                              :change-at change-at}}))
       
       ;; Org draft or unknown
