@@ -113,8 +113,14 @@
     (if (and item-id publisher-id)
       ;; upsert an item seen entry for the container and the author
       (pmap #(seen/store! user-id % item-id seen-at) [container-id publisher-id]) 
-      ;; upsert a seen entry for the container (container here may be the author)
-      (seen/store! user-id container-id seen-at)))) 
+      ;; upsert a seen entry for the container (NB: container here may also be a user, the author)
+      (seen/store! user-id container-id seen-at))
+    ;; recurse after updating the message so it seems the client asked for status on the seen container...
+    ;; in this way the client will receive an updated container/status message for this container
+    (handle-persistence-message (-> message
+                                  (dissoc :seen)
+                                  (assoc :status true)
+                                  (assoc :container-ids [container-id]))))) 
 
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time

@@ -116,7 +116,8 @@
         container-id (:container-id ?data)
         seen-at (:seen-at ?data)]
     (timbre/info "[websocket] container/seen for:" container-id "at:" seen-at "by:" user-id "/" client-id)
-    (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id :seen-at seen-at})))
+    (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id
+                                       :seen-at seen-at :client-id client-id})))
 
 (defmethod -event-msg-handler
   :item/seen
@@ -131,7 +132,8 @@
     (timbre/info "[websocket] item/seen for:" item-id "published by:" publisher-id "in:" container-id
                                         "at:" seen-at "by:" user-id "/" client-id)
     (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id
-                                       :item-id item-id :publisher-id publisher-id :seen-at seen-at})))
+                                       :item-id item-id :publisher-id publisher-id
+                                       :client-id client-id :seen-at seen-at})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
