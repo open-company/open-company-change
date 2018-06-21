@@ -41,7 +41,7 @@
     [org.apache.httpcomponents/httpclient "4.5.5"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.16.6"]
+    [open-company/lib "0.16.10"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -163,6 +163,8 @@
 
   :aliases {
     "build" ["do" "clean," "deps," "compile"] ; clean and build code
+    "create-migration" ["run" "-m" "oc.change.db.migrations" "create"] ; create a data migration
+    "migrate-db" ["run" "-m" "oc.change.db.migrations" "migrate"] ; run pending data migrations
     "start" ["do" "run"] ; start a development server
     "start!" ["with-profile" "prod" "do" "start"] ; start a server in production
     "autotest" ["with-profile" "qa" "do" "midje" ":autotest"] ; watch for code changes and run affected tests
