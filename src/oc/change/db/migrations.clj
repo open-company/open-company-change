@@ -21,8 +21,8 @@
          (string? migrations-dir)]}
   ;; Run the migrations
   (println "\nRunning migrations.")
-  (->> (filter #(s/ends-with? % ".edn") (file-seq (clojure.java.io/file migrations-dir)))
-       (run-migrations dynamodb-opts migrations-dir))
+  (run-migrations dynamodb-opts migrations-dir
+    (filter #(s/ends-with? % ".edn") (file-seq (clojure.java.io/file migrations-dir))))
   (println "Migrations complete.")
   (System/exit 0)) ; gets hung when running Faraday commands in migrations, so force an exit
 
