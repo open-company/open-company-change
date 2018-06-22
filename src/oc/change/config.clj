@@ -52,5 +52,5 @@
 
 ;; ----- Change Service -----
 
-(defonce change-ttl 30) ; days
-(defonce seen-ttl 30) ; days
+(defonce change-ttl (or (env :oc-change-ttl) 30)) ; days
+(defonce seen-ttl (or (env :oc-seen-ttl) 30)) ; days
