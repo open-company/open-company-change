@@ -158,9 +158,9 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        item-ids ?data]
-    (timbre/info "[websocket] item/who-read for:" item-ids)
-    (>!! persistence/persistence-chan {:who-read true :item-ids item-ids :client-id client-id})))
+        item-id ?data]
+    (timbre/info "[websocket] item/who-read for:" item-id)
+    (>!! persistence/persistence-chan {:who-read true :item-id item-id :client-id client-id})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
@@ -318,6 +318,21 @@
   (change/store! "4444-4444-4444" (oc-time/current-timestamp))
 
   (send-message :container/watch ["1111-1111-1111" "2222-2222-2222" "3333-3333-3333" "4444-4444-4444" "5555-5555-5555"])
+
+
+  (require '[oc.change.resources.read :as read])
+
+  (send-message :item/read {:org-id "1111-1111-1111" :container-id "cccc-cccc-cccc" :item-id "eeee-eeee-eeee" 
+                            :user-id "aaaa-aaaa-aaaa" :name "Albert Camus" :avatar-url "http//..."
+                            :read-at (oc-time/current-timestamp)})
+
+  (read/retrieve "eeee-eeee-eeee")
+
+  (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "bbbb-bbbb-bbbb"
+               "Arthur Schopenhauer" "http//..." (oc-time/current-timestamp))
+
+  (read/retrieve "eeee-eeee-eeee")
+
 
   (reset! ws-conn nil) ; stop the client
 

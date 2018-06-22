@@ -9,7 +9,8 @@
             [taoensso.timbre :as timbre]
             [oc.lib.async.watcher :as watcher]
             [oc.change.resources.seen :as seen]
-            [oc.change.resources.change :as change]))
+            [oc.change.resources.change :as change]
+            [oc.change.resources.read :as read]))
 
 ;; ----- core.async -----
 
@@ -89,9 +90,11 @@
   is called from inside a go block, it's also inside an `async/thread`.
   "
 
+  ;; READS
+
   ([message :guard :status]
   ;; Lookup when a specified user saw specified containers and when the specified containers saw changes
-  ;; Send the merger of the 2 (by container-id) to the sender channel as a status message
+  ;; Send the merger of the 2 (by container-id) to the sender's channel as a container/status message
   (let [user-id (:user-id message)
         container-ids (:container-ids message)
         client-id (:client-id message)]
@@ -101,6 +104,19 @@
           status (status-for container-ids changes seens)]
       (>!! watcher/sender-chan {:event [:container/status status]
                                 :client-id client-id}))))
+
+ ([message :guard :who-read]
+  ;; Lookup who read a specified item
+  ;; Send the result to the sender's channel as an item/status message
+  (let [item-id (:item-id message)
+        client-id (:client-id message)]
+    (timbre/info "Who read request for:" item-id "by:" client-id)
+    (let [reads (read/retrieve item-id)
+          status {:item-id item-id :reads reads}]
+      (>!! watcher/sender-chan {:event [:item/status status]
+                                :client-id client-id}))))
+
+  ;; WRITES
 
   ([message :guard :seen]
   ;; Persist that a specified user saw a specified container at a specified time
@@ -131,12 +147,8 @@
         user-name (:name message)
         avatar-url (:avatar-url message)
         read-at (:read-at message)]
-    (timbre/info "Read request for user:" user-id "on:" container-id "at:" seen-at)
-    (if (and item-id publisher-id)
-      ;; upsert an item seen entry for the container and the author
-      (pmap #(seen/store! user-id % item-id seen-at) [item-id publisher-id]) 
-      ;; upsert a seen entry for the container (container here may be the author)
-      (seen/store! user-id container-id seen-at)))) 
+    (timbre/info "Read request for user:" user-id "for item:" item-id "at:" read-at)
+    (read/store! org-id container-id item-id user-id user-name avatar-url read-at)))
 
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time
