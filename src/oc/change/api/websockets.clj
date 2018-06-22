@@ -328,11 +328,13 @@
 
   (read/retrieve "eeee-eeee-eeee")
 
-  (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "bbbb-bbbb-bbbb"
-               "Arthur Schopenhauer" "http//..." (oc-time/current-timestamp))
+  (send-message :item/read {:org-id "1111-1111-1111" :container-id "cccc-cccc-cccc" :item-id "eeee-eeee-eeee" 
+                            :user-id "bbbb-bbbb-bbbb" :name "Arthur Schopenhauer" :avatar-url "http//..."
+                            :read-at (oc-time/current-timestamp)})
 
   (read/retrieve "eeee-eeee-eeee")
 
+  (send-message :item/who-read "eeee-eeee-eeee")
 
   (reset! ws-conn nil) ; stop the client
 
