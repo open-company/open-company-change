@@ -1,11 +1,16 @@
 (ns oc.change.resources.read
-  ""
+  "Store records of users reading an item, and provide retrieval and counts of the same."
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
+
+(defn- count-for [item-id]
+  (let [results (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]})]
+    (println results)
+    {:item-id item-id :count (count results)}))
 
 (schema/defn ^:always-validate store!
   
@@ -36,6 +41,11 @@
       (map #(clojure.set/rename-keys % {:user_id :user-id :avatar_url :avatar-url :read_at :read-at}))
       (map #(select-keys % [:user-id :name :avatar-url :read-at]))))
 
+(schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
+                                                :count schema/Int}]
+  [item-ids :- [lib-schema/UniqueID]]
+  (pmap #(count-for %) item-ids))
+
 (comment
 
   (require '[oc.lib.time :as oc-time])
@@ -63,6 +73,11 @@
                "Arthur Schopenhauer" "http//..." (oc-time/current-timestamp))
 
   (read/retrieve "eeee-eeee-eeee")
+
+  (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eee1" "aaaa-aaaa-aaaa"
+               "Albert Camus" "http//..." (oc-time/current-timestamp))
   
+  (read/counts ["eeee-eeee-eeee" "eeee-eeee-eee1"])
+
   (far/delete-table c/dynamodb-opts read/table-name)
 )
