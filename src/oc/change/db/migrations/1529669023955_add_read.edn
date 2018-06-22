@@ -1,0 +1,20 @@
+(ns oc.change.db.migrations.add-read
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            [oc.change.resources.read :as read]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; need to be idempotent
+(defn up [dynamodb-opts]
+
+  ;; Create new 'change' table if needed
+  (println
+    (far/ensure-table dynamodb-opts
+      read/table-name
+      [:item_id :s]
+      {:range-keydef [:user_id :s]
+       :throughput {:read 1 :write 1}
+       :block? true}))
+
+  true) ; return true on success
