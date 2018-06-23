@@ -116,6 +116,16 @@
       (>!! watcher/sender-chan {:event [:item/status status]
                                 :client-id client-id}))))
 
+ ([message :guard :who-read-count]
+  ;; Lookup how many reads are there for each of a sequence of specified items
+  ;; Send the result to the sender's channel as an item/counts message
+  (let [item-ids (:item-ids message)
+        client-id (:client-id message)]
+    (timbre/info "Who read cound request for:" item-ids "by:" client-id)
+    (let [reads (read/counts item-ids)]
+      (>!! watcher/sender-chan {:event [:item/counts reads]
+                                :client-id client-id}))))
+
   ;; WRITES
 
   ([message :guard :seen]
