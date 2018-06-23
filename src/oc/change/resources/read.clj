@@ -7,9 +7,11 @@
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
 
+;; In theory, DynamoDB (and by extension, Faraday) support `{:return :count}` but it doesn't seem to be working
+;; https://github.com/ptaoussanis/faraday/issues/91
+;; `{return [:none]}` is simply a way to get an empty map for every item, then we count the empty maps
 (defn- count-for [item-id]
-  (let [results (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]})]
-    (println results)
+  (let [results (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]} {:return [:none]})]
     {:item-id item-id :count (count results)}))
 
 (schema/defn ^:always-validate store!
