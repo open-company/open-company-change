@@ -173,12 +173,12 @@ time of the newest content in that container and the last time the user saw that
 
 The DynamoDB schema is quite simple and is made up of 2 tables: `change`, and `seen`. To support multiple environments, these tables are prefixed with an environment name, such as `staging_change` or `production_seen`.
 
-The `change` table has a string partition/primary key called `container_id` and a sort key called `item_id`. A full item in the table is:
+The `change` table has a string partition key called `container_id` and a string sort key called `item_id`. A full item in the table is:
 
 ```
 {
-  "container_id": 4hex-4hex-4hex UUID,
-  "item_id":  4hex-4hex-4hex UUID,
+  "container_id": 4hex-4hex-4hex UUID, _partition key_
+  "item_id":  4hex-4hex-4hex UUID, _sort_key_
   "change_at": ISO8601,
   "ttl": epoch-time
 }
@@ -186,12 +186,12 @@ The `change` table has a string partition/primary key called `container_id` and 
 
 The meaning of each item above is that the container specified by the `container_id` saw a creation event on `item_id` at the `change_at` time, and this record will expire and be removed from DynamoDB at `ttl` time (configured by `change_ttl` in `config.clj`.
 
-The `seen` table has a string partition/primary key called `user_id`, and a sort key called `container_item_id`. A full item in the table is:
+The `seen` table has a string partition key called `user_id`, and a string sort key called `container_item_id`. A full item in the table is:
 
 ```
 {
-  "user_id": 4hex-4hex-4hex UUID,
-  "container_item_id": 4hex-4hex-4hex-4hex-4hex-4hex UUID,
+  "user_id": 4hex-4hex-4hex UUID, _partition key_
+  "container_item_id": 4hex-4hex-4hex-4hex-4hex-4hex UUID, _sort key_
   "container_id": 4hex-4hex-4hex UUID,
   "item_id": 4hex-4hex-4hex UUID,
   "seen_at": ISO8601,
@@ -202,6 +202,23 @@ The `seen` table has a string partition/primary key called `user_id`, and a sort
 The meaning of each item above is that the user specified by the `user_id` last saw the item specified by the `item_id` in the container specified by the `container_id` at the `change_at` time, and this record will expire and be removed from DynamoDB at `ttl` time (configured by `seen-ttl` in `config.clj`.
 
 Sometimes the `item_id` is a specific value which indicates they saw the entire container.
+
+The `read` table has a string partition key called `item_id`, and a string sort key called `user_id`. A full item in the table is:
+
+```
+{
+  "item_id": 4hex-4hex-4hex UUID, _partition key_
+  "user_id": 4hex-4hex-4hex UUID, _sort key_
+  "org_id": 4hex-4hex-4hex UUID,
+  "container_id": 4hex-4hex-4hex UUID,
+  "name": string,
+  "avatar_url": string,
+  "read_at": ISO8601,
+}
+```
+
+The meaning of each item above is that the user specified by the `user_id` with the name specified by `name` and the avatar specified by `avatar_url` last read the item specified by the `item_id` in the container specified by the `container_id` of the org specified by the `org_id` at the `read_at` time.
+
 
 ### SQS Messaging
 
@@ -256,8 +273,7 @@ indicate the user has seen the container.
 {:container-id "1234-abcd-1234" seen-at: ISO8601}
 ```
 
-At any point, the server may send a `:container/change`, this indicates new content in a particular container, created
-by a particular user.
+At any point, the server may send a `:container/change`, this indicates new content in a particular container, created by a particular user.
 
 ```clojure
 {:container-id "1234-abcd-1234" :change-at ISO8601 :user-id "5678-dcba-8765"}
@@ -277,7 +293,8 @@ To run the tests locally:
 
 ```console
 lein kibit
-lean eastwood
+lein eastwood
+lein midje
 ```
 
 
