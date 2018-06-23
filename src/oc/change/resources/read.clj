@@ -44,7 +44,7 @@
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
                                                 :count schema/Int}]
   [item-ids :- [lib-schema/UniqueID]]
-  (pmap #(count-for %) item-ids))
+  (pmap count-for item-ids))
 
 (comment
 
