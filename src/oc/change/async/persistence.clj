@@ -141,12 +141,12 @@
       (pmap #(seen/store! user-id % item-id seen-at) [container-id publisher-id]) 
       ;; upsert a seen entry for the container (NB: container here may also be a user, the author)
       (seen/store! user-id container-id seen-at))
-    ;; recurse after updating the message so it seems the client asked for status on the seen container...
+    ;; recurse after upserting the message so it seems the client asked for status on the seen container...
     ;; in this way the client will receive an updated container/status message for this container
     (handle-persistence-message (-> message
                                   (dissoc :seen)
                                   (assoc :status true)
-                                  (assoc :container-ids [container-id]))))) 
+                                  (assoc :container-ids [container-id])))))
 
   ([message :guard :read]
   ;; Persist that a specified user read a specified item
@@ -158,7 +158,14 @@
         avatar-url (:avatar-url message)
         read-at (:read-at message)]
     (timbre/info "Read request for user:" user-id "for item:" item-id "at:" read-at)
-    (read/store! org-id container-id item-id user-id user-name avatar-url read-at)))
+    (read/store! org-id container-id item-id user-id user-name avatar-url read-at)
+    ;; Send an item/status to everyone watching this container so they get the updated list of readers
+    (let [reads (read/retrieve item-id)
+          status {:item-id item-id :reads reads}]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id container-id
+                                 :event :item/status
+                                 :payload status}))))
 
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time
