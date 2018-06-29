@@ -143,10 +143,11 @@
       (seen/store! user-id container-id seen-at))
     ;; recurse after upserting the message so it seems the client asked for status on the seen container...
     ;; in this way the client will receive an updated container/status message for this container
-    (handle-persistence-message (-> message
-                                  (dissoc :seen)
-                                  (assoc :status true)
-                                  (assoc :container-ids [container-id])))))
+    ; (handle-persistence-message (-> message
+    ;                               (dissoc :seen)
+    ;                               (assoc :status true)
+    ;                               (assoc :container-ids [container-id])))
+    ))
 
   ([message :guard :read]
   ;; Persist that a specified user read a specified item
