@@ -117,10 +117,11 @@
       (seen/store! user-id container-id seen-at))
     ;; recurse after updating the message so it seems the client asked for status on the seen container...
     ;; in this way the client will receive an updated container/status message for this container
-    (handle-persistence-message (-> message
-                                  (dissoc :seen)
-                                  (assoc :status true)
-                                  (assoc :container-ids [container-id]))))) 
+    ; (handle-persistence-message (-> message
+    ;                               (dissoc :seen)
+    ;                               (assoc :status true)
+    ;                               (assoc :container-ids [container-id])))
+    ))
 
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time
