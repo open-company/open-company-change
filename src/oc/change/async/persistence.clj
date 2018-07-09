@@ -94,11 +94,13 @@
   ;; Send the merger of the 2 (by container-id) to the sender channel as a status message
   (let [user-id (:user-id message)
         container-ids (:container-ids message)
-        client-id (:client-id message)]
+        client-id (:client-id message)
+        just-seen (:just-seen message)] ; an entry just written to the DB that might not be readable yet
     (timbre/info "Status request for:" container-ids "by:" user-id "/" client-id)
     (let [seens (filter #((set container-ids) (:container-id %)) (seen/retrieve user-id))
+          all-seens (if just-seen (conj seens just-seen) seens) ; avoid a race condition in the DB
           changes (change/retrieve container-ids)
-          status (status-for container-ids changes seens)]
+          status (status-for container-ids changes all-seens)]
       (>!! watcher/sender-chan {:event [:container/status status]
                                 :client-id client-id}))))
 
@@ -108,7 +110,8 @@
         container-id (:container-id message)
         item-id (:item-id message)
         publisher-id (:publisher-id message)
-        seen-at (:seen-at message)]
+        seen-at (:seen-at message)
+        just-seen (select-keys message [:container-id :item-id :seen-at])]
     (timbre/info "Seen request for user:" user-id "on:" container-id "at:" seen-at)
     (if (and item-id publisher-id)
       ;; upsert an item seen entry for the container and the author
@@ -119,6 +122,7 @@
     ;; in this way the client will receive an updated container/status message for this container
     (handle-persistence-message (-> message
                                   (dissoc :seen)
+                                  (assoc :just-seen just-seen)
                                   (assoc :status true)
                                   (assoc :container-ids [container-id])))))
 
