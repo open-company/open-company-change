@@ -25,6 +25,9 @@
 
 ;; ----- DynamoDB -----
 
+(defonce migrations-dir "./src/oc/change/db/migrations")
+(defonce migration-template "./src/oc/change/assets/migration.template.edn")
+
 (defonce dynamodb-end-point (or (env :dynamodb-end-point) "http://localhost:8000"))
 
 (defonce dynamodb-table-prefix (or (env :dynamodb-table-prefix) "local"))
@@ -49,5 +52,5 @@
 
 ;; ----- Change Service -----
 
-(defonce container-time-ttl 30) ; days
-(defonce user-container-time-ttl 30) ; days
+(defonce change-ttl (or (env :oc-change-ttl) 30)) ; days
+(defonce seen-ttl (or (env :oc-seen-ttl) 30)) ; days

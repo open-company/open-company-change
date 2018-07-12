@@ -1,0 +1,38 @@
+(ns oc.change.db.migrations.swap-tables
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            [oc.change.resources.change :as change]
+            [oc.change.resources.seen :as seen]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; need to be idempotent
+(defn up [dynamodb-opts]
+  
+  ;; Remove legacy tables
+  (let [table-names (set (map name (far/list-tables dynamodb-opts)))
+        legacy-tables (map #(str config/dynamodb-table-prefix "_" (str %)) ["user_container_time" "container_time"])]
+    (doseq [legacy-table legacy-tables]
+      (when (table-names legacy-table)
+        (println "Deleting legacy table: " legacy-table)
+        (far/delete-table dynamodb-opts legacy-table))))
+
+  ;; Create new 'change' table if needed
+  (println
+    (far/ensure-table dynamodb-opts
+      change/table-name
+      [:container_id :s]
+      {:range-keydef [:item_id :s]
+       :throughput {:read 1 :write 1}
+       :block? true}))
+
+  ; ;; Create new 'seen' table if needed
+  (println
+    (far/ensure-table dynamodb-opts
+      seen/table-name
+      [:user_id :s]
+      {:range-keydef [:container_item_id :s]
+       :throughput {:read 1 :write 1}
+       :block? true}))
+
+  true) ; return true on success

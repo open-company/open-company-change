@@ -38,10 +38,10 @@
     ;; NB: encore pulled in from oc.lib
     [com.taoensso/faraday "1.10.0-alpha1" :exclusions [com.amazonaws/aws-java-sdk-dynamodb joda-time com.taoensso/encore]]
     ;; Faraday dependency, not pulled in? https://hc.apache.org/
-    [org.apache.httpcomponents/httpclient "4.5.5"]
+    [org.apache.httpcomponents/httpclient "4.5.6"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.16.6"]
+    [open-company/lib "0.16.10"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -80,7 +80,7 @@
         ;; NB: clj-time is pulled in by oc.lib
         ;; NB: joda-time is pulled in by oc.lib via clj-time
         ;; NB: commons-codec pulled in by oc.lib
-        [midje "1.9.2-alpha3" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]] 
+        [midje "1.9.2-alpha4" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]] 
         ;; Clojure WebSocket client https://github.com/cch1/http.async.client
         [http.async.client "1.3.0"]
         ;; Test Ring requests https://github.com/weavejester/ring-mock
@@ -90,7 +90,7 @@
         ;; Example-based testing https://github.com/marick/lein-midje
         [lein-midje "3.2.1"]
         ;; Linter https://github.com/jonase/eastwood
-        [jonase/eastwood "0.2.6"]
+        [jonase/eastwood "0.2.7"]
         ;; Static code search for non-idiomatic code https://github.com/jonase/kibit        
         [lein-kibit "0.1.6" :exclusions [org.clojure/clojure]]
       ]
@@ -108,6 +108,8 @@
         ;; Check for code smells https://github.com/dakrone/lein-bikeshed
         ;; NB: org.clojure/tools.cli is pulled in by lein-kibit
         [lein-bikeshed "0.5.1" :exclusions [org.clojure/tools.cli]] 
+        ;; Plugin for finding dead code (be thoughtful, lots of false positives) https://github.com/venantius/yagni
+        [venantius/yagni "0.1.4"]
         ;; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-checkall "0.1.1"]
         ;; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
@@ -140,8 +142,8 @@
                  '[oc.lib.db.common :as db-common]
                  '[oc.change.app :refer (app)]
                  '[oc.change.config :as config]
-                 '[oc.change.resources.user :as u]
-                 '[oc.change.resources.container :as container]
+                 '[oc.change.resources.seen :as seen]
+                 '[oc.change.resources.change :as change]
                  )
       ]
     }]
@@ -163,6 +165,8 @@
 
   :aliases {
     "build" ["do" "clean," "deps," "compile"] ; clean and build code
+    "create-migration" ["run" "-m" "oc.change.db.migrations" "create"] ; create a data migration
+    "migrate-db" ["run" "-m" "oc.change.db.migrations" "migrate"] ; run pending data migrations
     "start" ["do" "run"] ; start a development server
     "start!" ["with-profile" "prod" "do" "start"] ; start a server in production
     "autotest" ["with-profile" "qa" "do" "midje" ":autotest"] ; watch for code changes and run affected tests
