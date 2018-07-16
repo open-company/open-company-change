@@ -9,7 +9,8 @@
             [taoensso.timbre :as timbre]
             [oc.lib.async.watcher :as watcher]
             [oc.change.resources.seen :as seen]
-            [oc.change.resources.change :as change]))
+            [oc.change.resources.change :as change]
+            [oc.change.resources.read :as read]))
 
 ;; ----- core.async -----
 
@@ -89,9 +90,11 @@
   is called from inside a go block, it's also inside an `async/thread`.
   "
 
+  ;; READS
+
   ([message :guard :status]
   ;; Lookup when a specified user saw specified containers and when the specified containers saw changes
-  ;; Send the merger of the 2 (by container-id) to the sender channel as a status message
+  ;; Send the merger of the 2 (by container-id) to the sender's channel as a container/status message
   (let [user-id (:user-id message)
         container-ids (:container-ids message)
         client-id (:client-id message)
@@ -103,6 +106,29 @@
           status (status-for container-ids changes all-seens)]
       (>!! watcher/sender-chan {:event [:container/status status]
                                 :client-id client-id}))))
+
+ ([message :guard :who-read]
+  ;; Lookup who read a specified item
+  ;; Send the result to the sender's channel as an item/status message
+  (let [item-id (:item-id message)
+        client-id (:client-id message)]
+    (timbre/info "Who read request for:" item-id "by:" client-id)
+    (let [reads (read/retrieve item-id)
+          status {:item-id item-id :reads reads}]
+      (>!! watcher/sender-chan {:event [:item/status status]
+                                :client-id client-id}))))
+
+ ([message :guard :who-read-count]
+  ;; Lookup how many reads are there for each of a sequence of specified items
+  ;; Send the result to the sender's channel as an item/counts message
+  (let [item-ids (:item-ids message)
+        client-id (:client-id message)]
+    (timbre/info "Who read cound request for:" item-ids "by:" client-id)
+    (let [reads (read/counts item-ids)]
+      (>!! watcher/sender-chan {:event [:item/counts reads]
+                                :client-id client-id}))))
+
+  ;; WRITES
 
   ([message :guard :seen]
   ;; Persist that a specified user saw a specified container at a specified time
@@ -118,13 +144,32 @@
       (pmap #(seen/store! user-id % item-id seen-at) [container-id publisher-id]) 
       ;; upsert a seen entry for the container (NB: container here may also be a user, the author)
       (seen/store! user-id container-id seen-at))
-    ;; recurse after updating the message so it seems the client asked for status on the seen container...
+    ;; recurse after upserting the message so it seems the client asked for status on the seen container...
     ;; in this way the client will receive an updated container/status message for this container
     (handle-persistence-message (-> message
                                   (dissoc :seen)
                                   (assoc :just-seen just-seen)
                                   (assoc :status true)
                                   (assoc :container-ids [container-id])))))
+
+  ([message :guard :read]
+  ;; Persist that a specified user read a specified item
+  (let [org-id (:org-id message)
+        user-id (:user-id message)
+        container-id (:container-id message)
+        item-id (:item-id message)
+        user-name (:name message)
+        avatar-url (:avatar-url message)
+        read-at (:read-at message)]
+    (timbre/info "Read request for user:" user-id "for item:" item-id "at:" read-at)
+    (read/store! org-id container-id item-id user-id user-name avatar-url read-at)
+    ;; Send an item/status to everyone watching this container so they get the updated list of readers
+    (let [reads (read/retrieve item-id)
+          status {:item-id item-id :reads reads}]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id container-id
+                                 :event :item/status
+                                 :payload status}))))
 
   ([message :guard :change]
   ; Persist that a container received a new item at a specific time
