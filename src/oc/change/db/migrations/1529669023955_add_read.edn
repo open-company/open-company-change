@@ -8,7 +8,7 @@
 ;; need to be idempotent
 (defn up [dynamodb-opts]
 
-  ;; Create new 'change' table if needed
+  ;; Create new table if needed
   (println
     (far/ensure-table dynamodb-opts
       read/table-name

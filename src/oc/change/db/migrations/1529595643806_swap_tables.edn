@@ -17,7 +17,7 @@
         (println "Deleting legacy table: " legacy-table)
         (far/delete-table dynamodb-opts legacy-table))))
 
-  ;; Create new 'change' table if needed
+  ;; Create new table if needed
   (println
     (far/ensure-table dynamodb-opts
       change/table-name
@@ -26,7 +26,7 @@
        :throughput {:read 1 :write 1}
        :block? true}))
 
-  ; ;; Create new 'seen' table if needed
+  ; ;; Create new table if needed
   (println
     (far/ensure-table dynamodb-opts
       seen/table-name
