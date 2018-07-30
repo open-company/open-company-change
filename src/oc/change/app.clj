@@ -1,5 +1,5 @@
 (ns oc.change.app
-  "Namespace for the HTTP application which serves the REST API."
+  "Namespace for the application which starts all the system components."
   (:gen-class)
   (:require
     [clojure.core.async :as async :refer (>!!)]
