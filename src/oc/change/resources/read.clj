@@ -53,18 +53,18 @@
   (require '[oc.lib.time :as oc-time])
   (require '[oc.change.resources.read :as read] :reload)
 
-  (far/list-tables c/dynamodb-opts)
+  (far/list-tables config/dynamodb-opts)
 
-  (far/delete-table c/dynamodb-opts read/table-name)
+  (far/delete-table config/dynamodb-opts read/table-name)
   (aprint
-    (far/create-table c/dynamodb-opts
+    (far/create-table config/dynamodb-opts
       read/table-name
       [:item_id :s]
       {:range-keydef [:user_id :s]
        :throughput {:read 1 :write 1}
        :block? true}))
 
-  (aprint (far/describe-table c/dynamodb-opts read/table-name))
+  (aprint (far/describe-table config/dynamodb-opts read/table-name))
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))
