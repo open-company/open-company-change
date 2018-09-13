@@ -60,19 +60,17 @@
         error (if (:test-error msg-body) (/ 1 0) false) ; a message testing Sentry error reporting
         change-type (keyword (:notification-type msg-body))
         resource-type (keyword (:resource-type msg-body))
-        container-id (or (-> msg-body :board :uuid) ; entry or board
-                         (-> msg-body :org :uuid)) ; org
+        container-id  (if (= "draft" (-> msg-body :content :new :status))
+                        draft-board-uuid
+                        (or (-> msg-body :board :uuid) ; entry or board
+                            (-> msg-body :org :uuid))) ; org
         item-id (or (-> msg-body :content :new :uuid) ; new or update
                     (-> msg-body :content :old :uuid)) ; delete
         change-at (or (-> msg-body :content :new :updated-at) ; add / update
                       (:notification-at msg-body)) ; delete
-        draft? (or (= container-id draft-board-uuid)
-                   (= "draft" (or (-> msg-body :content :new :status)
-                              (and (= change-type "delete") (-> msg-body :content :old :status)))))
         user-id (-> msg-body :user :user-id)]
     (timbre/info "Received message from SQS:" msg-body)
     (if (and
-          (not draft?)
           (or (= change-type :add) (= change-type :update) (= change-type :delete))
           (or (= resource-type :entry) (= resource-type :board)))
       
@@ -97,15 +95,11 @@
                                              :user-id user-id
                                              :change-at change-at}}))
       
-      ;; Org draft or unknown
+      ;; Org or unknown
       (cond
         (= resource-type :org)
         (timbre/warn "Unhandled org message from SQS:" change-type resource-type)
- 
-        draft?
-        (timbre/info "Skipping draft message from SQS:" change-type resource-type)
-
-        :else
+        :default
         (timbre/warn "Unknown message from SQS:" change-type resource-type))))
   (sqs/ack done-channel msg))
 
