@@ -23,8 +23,6 @@
     [oc.change.api.websockets :as websockets-api]
     [oc.change.async.persistence :as persistence]))
 
-(def draft-board-uuid "0000-0000-0000")
-
 ;; ----- Unhandled Exceptions -----
 
 ;; Send unhandled exceptions to log and Sentry
@@ -60,15 +58,23 @@
         error (if (:test-error msg-body) (/ 1 0) false) ; a message testing Sentry error reporting
         change-type (keyword (:notification-type msg-body))
         resource-type (keyword (:resource-type msg-body))
-        container-id  (if (= "draft" (-> msg-body :content :new :status))
-                        draft-board-uuid
+        draft?   (or (= "draft" (-> msg-body :content :new :status))
+                     (and (= change-type :delete)
+                          (= "draft" (-> msg-body :content :old :status))))
+        user-id (-> msg-body :user :user-id)
+        container-id  (if draft?
+                        (str c/draft-board-uuid "-" user-id) ;; attach author id
                         (or (-> msg-body :board :uuid) ; entry or board
                             (-> msg-body :org :uuid))) ; org
+        payload-cont-id (if draft?
+                          ;; remove user id from draft containter id
+                          (clojure.string/replace container-id
+                                                  (str "-" user-id) "")
+                          container-id)
         item-id (or (-> msg-body :content :new :uuid) ; new or update
                     (-> msg-body :content :old :uuid)) ; delete
         change-at (or (-> msg-body :content :new :updated-at) ; add / update
-                      (:notification-at msg-body)) ; delete
-        user-id (-> msg-body :user :user-id)]
+                      (:notification-at msg-body))] ; delete
     (timbre/info "Received message from SQS:" msg-body)
     (if (and
           (or (= change-type :add) (= change-type :update) (= change-type :delete))
@@ -89,7 +95,7 @@
         (>!! watcher/watcher-chan {:send true
                                    :watch-id container-id
                                    :event (if (= resource-type :entry) :item/change :container/change)
-                                   :payload {:container-id container-id
+                                   :payload {:container-id payload-cont-id
                                              :change-type change-type
                                              :item-id item-id
                                              :user-id user-id
