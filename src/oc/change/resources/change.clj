@@ -9,8 +9,23 @@
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_change")))
 
+(defn draft-id? [s]
+  (if (and s
+           (string? s)
+           (re-matches #"^0000-0000-0000-(\d|[a-f]){4}-(\d|[a-f]){4}-(\d|[a-f]){4}$" s))
+    true
+    false))
+
+(def DraftID (schema/pred draft-id?))
+
+(defn unique-draft-id? [s]
+  (or (draft-id? s)
+      (lib-schema/unique-id? s)))
+
+(def UniqueDraftID (schema/pred unique-draft-id?))
+
 (schema/defn ^:always-validate store!
-  [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID change-at :- lib-schema/ISO8601]
+  [container-id :- UniqueDraftID item-id :- UniqueDraftID change-at :- lib-schema/ISO8601]
   (far/put-item c/dynamodb-opts table-name {
       :container_id container-id
       :item_id item-id
@@ -18,8 +33,8 @@
       :ttl (coerce/to-long (time/plus (time/now) (time/days c/change-ttl)))})
   true)
 
-(schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :change-at lib-schema/ISO8601}]
-  [container :- (schema/conditional sequential? [lib-schema/UniqueID] :else lib-schema/UniqueID)]
+(schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
+  [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
   (if (sequential? container)
     (flatten (pmap retrieve container))
     (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]})

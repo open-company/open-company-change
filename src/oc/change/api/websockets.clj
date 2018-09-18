@@ -96,7 +96,8 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        container-ids ?data]
+        data-ids ?data
+        container-ids (replace {c/draft-board-uuid (str c/draft-board-uuid "-" user-id)} data-ids)]
     (timbre/info "[websocket] container/watch for:" container-ids "by:" user-id "/" client-id)
     (>!! persistence/persistence-chan {:status true
                                        :container-ids container-ids
