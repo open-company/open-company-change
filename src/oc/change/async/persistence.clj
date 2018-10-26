@@ -161,7 +161,7 @@
         user-name (:name message)
         avatar-url (:avatar-url message)
         read-at (:read-at message)]
-    (timbre/info "Read request for user:" user-id "for item:" item-id "at:" read-at)
+    (timbre/info "Read request for user:" user-id "for item:" item-id "at:" read-at " org: " org-id " container: " container-id " name: " user-name " avatar: " avatar-url)
     (read/store! org-id container-id item-id user-id user-name avatar-url read-at)
     ;; Send an item/status to everyone watching this container so they get the updated list of readers
     (let [reads (read/retrieve item-id)
