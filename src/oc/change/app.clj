@@ -38,13 +38,25 @@
 
 ;; ----- SQS Incoming Request -----
 
+(defn- read-message-body
+  "
+  Try to parse as json, otherwise use read-string.
+  "
+  [msg]
+  (try
+    (let [bod (clojure.walk/keywordize-keys (json/parse-string msg true))]
+      (clojure.walk/keywordize-keys (json/parse-string (:Message bod))))
+    (catch Exception e
+      (read-string msg))))
+
 (defn sqs-handler
   "
   Handle an incoming SQS message to the change service.
 
   {
-    :notification-type 'add|update|delete',
+    :notification-type 'add|update|delete|read',
     :notification-at ISO8601,
+    :resource-type 'board|entry'
     :user {...},
     :org {...},
     :board {...},
@@ -53,15 +65,15 @@
   }
   "
   [msg done-channel]
-  (let [body (clojure.walk/keywordize-keys (json/parse-string (:body msg)))
-        msg-body (clojure.walk/keywordize-keys (json/parse-string (:Message body)))
+  (let [msg-body (read-message-body (:body msg))
         error (if (:test-error msg-body) (/ 1 0) false) ; a message testing Sentry error reporting
         change-type (keyword (:notification-type msg-body))
         resource-type (keyword (:resource-type msg-body))
         draft?   (or (= "draft" (-> msg-body :content :new :status))
                      (and (= change-type :delete)
                           (= "draft" (-> msg-body :content :old :status))))
-        user-id (-> msg-body :user :user-id)
+        user (:user msg-body)
+        user-id (:user-id user)
         container-id  (if draft?
                         (str c/draft-board-uuid "-" user-id) ;; attach author id
                         (or (-> msg-body :board :uuid) ; entry or board
@@ -77,30 +89,42 @@
                       (:notification-at msg-body))] ; delete
     (timbre/info "Received message from SQS:" msg-body)
     (if (and
-          (or (= change-type :add) (= change-type :update) (= change-type :delete))
+          (some #(= change-type %) [:add :update :delete :read])
           (or (= resource-type :entry) (= resource-type :board)))
-      
-      ;; Add/update/delete of entry/board
-      (do
-        (timbre/info "Requesting persistence for entry add/update/delete msg from SQS.")
-        (>!! persistence/persistence-chan (merge msg-body {:change true
-                                                           :change-type change-type
-                                                           :change-at change-at
-                                                           :container-id container-id
-                                                           :resource-type resource-type
-                                                           :item-id item-id
-                                                           :author-id user-id}))
+
+      (if (= change-type :read)
+        (let [item (get-in msg-body [:content :new])]
+          ;; Read of entry
+          (timbre/info "Requesting persistence for entry read msg from SQS.")
+          (>!! persistence/persistence-chan (merge msg-body {:read true
+                                                             :user-id user-id
+                                                             :org-id (:org-uuid item)
+                                                             :name (:name user)
+                                                             :avatar (:avatar-url user)
+                                                             :container-id container-id
+                                                             :publisher-id (:user-id (:publisher item))
+                                                             :item-id item-id
+                                                             :read-at (:read-at item)})))
+        ;; Add/update/delete of entry/board
+        (do
+          (timbre/info "Requesting persistence for entry add/update/delete msg from SQS.")
+          (>!! persistence/persistence-chan (merge msg-body {:change true
+                                                             :change-type change-type
+                                                             :change-at change-at
+                                                             :container-id container-id
+                                                             :resource-type resource-type
+                                                             :item-id item-id
+                                                             :author-id user-id}))
         
-        (timbre/info "Alerting watcher of add/update/delete msg from SQS.")
-        (>!! watcher/watcher-chan {:send true
-                                   :watch-id container-id
-                                   :event (if (= resource-type :entry) :item/change :container/change)
-                                   :payload {:container-id payload-cont-id
-                                             :change-type change-type
-                                             :item-id item-id
-                                             :user-id user-id
-                                             :change-at change-at}}))
-      
+          (timbre/info "Alerting watcher of add/update/delete msg from SQS.")
+          (>!! watcher/watcher-chan {:send true
+                                     :watch-id container-id
+                                     :event (if (= resource-type :entry) :item/change :container/change)
+                                     :payload {:container-id payload-cont-id
+                                               :change-type change-type
+                                               :item-id item-id
+                                               :user-id user-id
+                                               :change-at change-at}})))
       ;; Org or unknown
       (cond
         (= resource-type :org)
