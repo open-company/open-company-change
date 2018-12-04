@@ -41,7 +41,7 @@
     [org.apache.httpcomponents/httpclient "4.5.6"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.16.14"]
+    [open-company/lib "0.16.26alpha"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -51,7 +51,6 @@
     ;; Schema - Data validation https://github.com/Prismatic/schema
     ;; Timbre - Pure Clojure/Script logging library https://github.com/ptaoussanis/timbre
     ;; Amazonica - A comprehensive Clojure client for the AWS API https://github.com/mcohen01/amazonica
-    ;; Faraday DynamoDB client https://github.com/ptaoussanis/faraday
     ;; Raven - Interface to Sentry error reporting https://github.com/sethtrain/raven-clj
     ;; Cheshire - JSON encoding / decoding https://github.com/dakrone/cheshire
     ;; clj-time - Date and time lib https://github.com/clj-time/clj-time
