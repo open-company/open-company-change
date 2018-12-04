@@ -30,7 +30,7 @@
       :container_id container-id
       :item_id item-id
       :change_at change-at
-      :ttl (coerce/to-epoch (time/plus (time/now) (time/minutes c/change-ttl)))})
+      :ttl (coerce/to-epoch (time/plus (time/now) (time/days c/change-ttl)))})
   true)
 
 (schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
