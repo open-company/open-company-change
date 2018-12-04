@@ -20,11 +20,11 @@
 ;; NB: The fact that these migrations have been run already does not currently persist, so the up method
 ;; need to be idempotent
 (defn up [dynamodb-opts]
+  (when-not (clojure.string/starts-with? (:endpoint dynamodb-opts) "http://localhost")
+    ;; Add ttl to change table
+    (maybe-enable-ttl dynamodb-opts change/table-name)
 
-  ;; Add ttl to change table
-  (maybe-enable-ttl dynamodb-opts change/table-name)
-
-  ;; Add ttl to seen table
-  (maybe-enable-ttl dynamodb-opts seen/table-name)
+    ;; Add ttl to seen table
+    (maybe-enable-ttl dynamodb-opts seen/table-name))
 
   true) ; return true on success
