@@ -37,9 +37,13 @@
   [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
   (if (sequential? container)
     (flatten (pmap retrieve container))
-    (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]})
-      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
-      (map #(select-keys % [:container-id :item-id :change-at])))))
+    (let [now (coerce/to-epoch (time/now))]
+      (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]}
+            {:filter-expr "#k > :v"
+             :expr-attr-names {"#k" "ttl"}
+             :expr-attr-vals {":v" now}})
+        (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
+        (map #(select-keys % [:container-id :item-id :change-at]))))))
 
 (comment
 

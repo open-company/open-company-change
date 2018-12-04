@@ -2,6 +2,7 @@
   "Store tuples of: user-id, container-id, item-id and timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
+            [taoensso.timbre :as timbre]
             [clj-time.core :as time]
             [clj-time.coerce :as coerce]
             [oc.lib.schema :as lib-schema]
@@ -36,9 +37,13 @@
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
-  (->> (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]})
-      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :seen_at :seen-at}))
-      (map #(select-keys % [:container-id :item-id :seen-at]))))
+  (let [now (coerce/to-epoch (time/now))]
+    (->> (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]}
+          {:filter-expr "#k > :v"
+           :expr-attr-names {"#k" "ttl"}
+           :expr-attr-vals {":v" now}})
+        (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :seen_at :seen-at}))
+        (map #(select-keys % [:container-id :item-id :seen-at])))))
 
 (comment
 
