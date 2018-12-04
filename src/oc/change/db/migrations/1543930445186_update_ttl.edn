@@ -1,0 +1,28 @@
+(ns oc.change.db.migrations.update-ttl
+  (:use [amazonica.aws.dynamodbv2])
+  (:require [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            [oc.change.resources.change :as change]
+            [oc.change.resources.seen :as seen]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; need to be idempotent
+(defn up [dynamodb-opts]
+
+  (println "opts" dynamodb-opts)
+
+  ;; Add ttl to change table
+  (println
+    (update-time-to-live
+      dynamodb-opts
+      :table-name change/table-name
+      :time-to-live-specification {:attribute-name "ttl" :enabled true}))
+
+  ;; Add ttl to seen table
+  (println
+    (update-time-to-live
+      dynamodb-opts
+      :table-name seen/table-name
+      :time-to-live-specification {:attribute-name "ttl" :enabled true}))
+
+  true) ; return true on success
