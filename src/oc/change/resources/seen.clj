@@ -31,7 +31,7 @@
       :item-id item-id
       :user-id user-id
       :seen_at seen-at
-      :ttl (coerce/to-long (time/plus (time/now) (time/days c/seen-ttl)))})
+      :ttl (coerce/to-epoch (time/plus (time/now) (time/minutes c/seen-ttl)))})
   true))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
