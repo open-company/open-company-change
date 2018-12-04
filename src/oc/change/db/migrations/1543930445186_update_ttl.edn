@@ -5,24 +5,26 @@
             [oc.change.resources.change :as change]
             [oc.change.resources.seen :as seen]))
 
+(defn maybe-enable-ttl [dynamodb-opts table-name]
+  (let [ttl-desciption (describe-time-to-live dynamodb-opts :table-name table-name)]
+    (if (not= (-> ttl-desciption :time-to-live-description :time-to-live-status) "ENABLED")
+      (do
+        (println "Enabling TTL on " table-name)
+        (println
+          (update-time-to-live
+            dynamodb-opts
+            :table-name table-name
+            :time-to-live-specification {:attribute-name "ttl" :enabled true})))
+      (println "TTL already enabled on " table-name))))
+
 ;; NB: The fact that these migrations have been run already does not currently persist, so the up method
 ;; need to be idempotent
 (defn up [dynamodb-opts]
 
-  (println "opts" dynamodb-opts)
-
   ;; Add ttl to change table
-  (println
-    (update-time-to-live
-      dynamodb-opts
-      :table-name change/table-name
-      :time-to-live-specification {:attribute-name "ttl" :enabled true}))
+  (maybe-enable-ttl dynamodb-opts change/table-name)
 
   ;; Add ttl to seen table
-  (println
-    (update-time-to-live
-      dynamodb-opts
-      :table-name seen/table-name
-      :time-to-live-specification {:attribute-name "ttl" :enabled true}))
+  (maybe-enable-ttl dynamodb-opts seen/table-name)
 
   true) ; return true on success
