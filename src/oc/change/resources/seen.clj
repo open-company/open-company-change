@@ -25,14 +25,15 @@
     container-id :- lib-schema/UniqueID
     item-id :- lib-schema/UniqueID
     seen-at :- lib-schema/ISO8601]
-  (far/put-item c/dynamodb-opts table-name {
-      :user_id user-id
-      :container_item_id (str container-id "-" item-id)
-      :container_id container-id
-      :item-id item-id
-      :user-id user-id
-      :seen_at seen-at
-      :ttl (coerce/to-epoch (time/plus (time/now) (time/days c/seen-ttl)))})
+  (let [ttl-date (time/plus (time/now) (time/days c/seen-ttl))]
+    (far/put-item c/dynamodb-opts table-name {
+        :user_id user-id
+        :container_item_id (str container-id "-" item-id)
+        :container_id container-id
+        :item-id item-id
+        :user-id user-id
+        :seen_at seen-at
+        :ttl (coerce/to-epoch ttl-date)}))
   true))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
