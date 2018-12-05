@@ -24,7 +24,11 @@
     container-id :- lib-schema/UniqueID
     item-id :- lib-schema/UniqueID
     seen-at :- lib-schema/ISO8601]
-  (let [ttl-date (time/plus (time/now) (time/days c/seen-ttl))]
+  (let [;; If ttl value is set from env var it's a string, if it's default is an int
+        fixed-seen-ttl (if (string? c/seen-ttl)
+                         (Integer. (re-find #"\d+" c/seen-ttl))
+                         c/seen-ttl)
+        ttl-date (time/plus (time/now) (time/days fixed-seen-ttl))]
     (far/put-item c/dynamodb-opts table-name {
         :user_id user-id
         :container_item_id (str container-id "-" item-id)

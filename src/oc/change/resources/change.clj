@@ -26,7 +26,11 @@
 
 (schema/defn ^:always-validate store!
   [container-id :- UniqueDraftID item-id :- UniqueDraftID change-at :- lib-schema/ISO8601]
-  (let [ttl-date (time/plus (time/now) (time/days c/change-ttl))]
+  (let [;; If ttl value is set from env var it's a string, if it's default is an int
+        fixed-change-ttl (if (string? c/change-ttl)
+                           (Integer. (re-find #"\d+" c/change-ttl))
+                           c/change-ttl)
+        ttl-date (time/plus (time/now) (time/days fixed-change-ttl))]
     (far/put-item c/dynamodb-opts table-name {
         :container_id container-id
         :item_id item-id
