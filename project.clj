@@ -188,7 +188,9 @@
 
     ;; Exclude testing namespaces
     :tests-paths ["test"]
-    :exclude-namespaces [:test-paths]
+
+    ;; Exclude utility namespace since it's not used directly from the service app
+    :exclude-namespaces [:test-paths oc.change.util.fix-ttl]
   }
 
   :zprint {:old? false}
