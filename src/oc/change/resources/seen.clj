@@ -2,7 +2,6 @@
   "Store tuples of: user-id, container-id, item-id and timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
-            [taoensso.timbre :as timbre]
             [clj-time.core :as time]
             [clj-time.coerce :as coerce]
             [oc.lib.schema :as lib-schema]
