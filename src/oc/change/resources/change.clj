@@ -2,10 +2,9 @@
   "Store tuples of: container-id, item-id and change timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
-            [clj-time.core :as time]
-            [clj-time.coerce :as coerce]
             [oc.lib.schema :as lib-schema]
-            [oc.change.config :as c]))
+            [oc.change.config :as c]
+            [oc.change.util.ttl :as ttl-util]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_change")))
 
@@ -26,29 +25,23 @@
 
 (schema/defn ^:always-validate store!
   [container-id :- UniqueDraftID item-id :- UniqueDraftID change-at :- lib-schema/ISO8601]
-  (let [;; If ttl value is set from env var it's a string, if it's default is an int
-        fixed-change-ttl (if (string? c/change-ttl)
-                           (Integer. (re-find #"\d+" c/change-ttl))
-                           c/change-ttl)
-        ttl-date (time/plus (time/now) (time/days fixed-change-ttl))]
-    (far/put-item c/dynamodb-opts table-name {
-        :container_id container-id
-        :item_id item-id
-        :change_at change-at
-        :ttl (coerce/to-epoch ttl-date)}))
+  (far/put-item c/dynamodb-opts table-name {
+      :container_id container-id
+      :item_id item-id
+      :change_at change-at
+      :ttl (ttl-util/ttl-epoch c/change-ttl)})
   true)
 
 (schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
   [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
   (if (sequential? container)
     (flatten (pmap retrieve container))
-    (let [now (coerce/to-epoch (time/now))]
-      (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]}
-            {:filter-expr "#k > :v"
-             :expr-attr-names {"#k" "ttl"}
-             :expr-attr-vals {":v" now}})
-        (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
-        (map #(select-keys % [:container-id :item-id :change-at]))))))
+    (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]}
+          {:filter-expr "#k > :v"
+           :expr-attr-names {"#k" "ttl"}
+           :expr-attr-vals {":v" (ttl-util/ttl-now)}})
+      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
+      (map #(select-keys % [:container-id :item-id :change-at])))))
 
 (comment
 
