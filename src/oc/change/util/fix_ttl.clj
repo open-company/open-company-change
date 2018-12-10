@@ -8,10 +8,12 @@
 
 (defn fix-change-ttl []
   (println "Scanning " change/table-name)
-  (let [results (far/scan config/dynamodb-opts change/table-name {:attr-conds {:ttl [:gt 9999999999]}})]
+  (let [idx (atom 0)
+        results (far/scan config/dynamodb-opts change/table-name {:attr-conds {:ttl [:gt 9999999999]}})]
     (for [r results]
       (let [fixed-ttl (coerce/to-epoch (coerce/from-long (long (:ttl r))))]
-        (println "   Fixing:" (:ttl r) "->" fixed-ttl)
+        (println "   " @idx " - Fixing:" (:ttl r) "->" fixed-ttl)
+        (swap! idx inc)
         (far/update-item config/dynamodb-opts change/table-name
          {:container_id (:container_id r)
           :item_id (:item_id r)}
@@ -22,10 +24,12 @@
 
 (defn fix-seen-ttl []
   (println "Scanning " seen/table-name)
-  (let [results (far/scan config/dynamodb-opts seen/table-name {:attr-conds {:ttl [:gt 9999999999]}})]
+  (let [idx (atom 0)
+        results (far/scan config/dynamodb-opts seen/table-name {:attr-conds {:ttl [:gt 9999999999]}})]
     (for [r results]
       (let [fixed-ttl (coerce/to-epoch (coerce/from-long (long (:ttl r))))]
-        (println "   Fixing:" (:ttl r) "->" fixed-ttl)
+        (println "   " @idx " - Fixing:" (:ttl r) "->" fixed-ttl)
+        (swap! idx inc)
         (far/update-item config/dynamodb-opts seen/table-name
          {:user_id (:user_id r)
           :container_item_id (:container_item_id r)}
