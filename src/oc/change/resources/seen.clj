@@ -2,10 +2,9 @@
   "Store tuples of: user-id, container-id, item-id and timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
-            [clj-time.core :as time]
-            [clj-time.coerce :as coerce]
             [oc.lib.schema :as lib-schema]
-            [oc.change.config :as c]))
+            [oc.change.config :as c]
+            [oc.change.util.ttl :as ttl-util]))
 
 (def entire-container "9999-9999-9999")
 
@@ -31,12 +30,15 @@
       :item-id item-id
       :user-id user-id
       :seen_at seen-at
-      :ttl (coerce/to-long (time/plus (time/now) (time/days c/seen-ttl)))})
+      :ttl (ttl-util/ttl-epoch c/seen-ttl)})
   true))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
-  (->> (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]})
+  (->> (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]}
+        {:filter-expr "#k > :v"
+         :expr-attr-names {"#k" "ttl"}
+         :expr-attr-vals {":v" (ttl-util/ttl-now)}})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :seen_at :seen-at}))
       (map #(select-keys % [:container-id :item-id :seen-at]))))
 

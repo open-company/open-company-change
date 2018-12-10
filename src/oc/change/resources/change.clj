@@ -2,10 +2,9 @@
   "Store tuples of: container-id, item-id and change timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
-            [clj-time.core :as time]
-            [clj-time.coerce :as coerce]
             [oc.lib.schema :as lib-schema]
-            [oc.change.config :as c]))
+            [oc.change.config :as c]
+            [oc.change.util.ttl :as ttl-util]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_change")))
 
@@ -30,14 +29,17 @@
       :container_id container-id
       :item_id item-id
       :change_at change-at
-      :ttl (coerce/to-long (time/plus (time/now) (time/days c/change-ttl)))})
+      :ttl (ttl-util/ttl-epoch c/change-ttl)})
   true)
 
 (schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
   [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
   (if (sequential? container)
     (flatten (pmap retrieve container))
-    (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]})
+    (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]}
+          {:filter-expr "#k > :v"
+           :expr-attr-names {"#k" "ttl"}
+           :expr-attr-vals {":v" (ttl-util/ttl-now)}})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
       (map #(select-keys % [:container-id :item-id :change-at])))))
 
