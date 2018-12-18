@@ -1,30 +1,18 @@
 (ns oc.change.db.migrations.update-ttl
-  (:use [amazonica.aws.dynamodbv2])
   (:require [oc.lib.db.migrations :as m]
             [oc.change.config :as config]
             [oc.change.resources.change :as change]
-            [oc.change.resources.seen :as seen]))
-
-(defn maybe-enable-ttl [dynamodb-opts table-name]
-  (let [ttl-desciption (describe-time-to-live dynamodb-opts :table-name table-name)]
-    (if (not= (-> ttl-desciption :time-to-live-description :time-to-live-status) "ENABLED")
-      (do
-        (println "Enabling TTL on " table-name)
-        (println
-          (update-time-to-live
-            dynamodb-opts
-            :table-name table-name
-            :time-to-live-specification {:attribute-name "ttl" :enabled true})))
-      (println "TTL already enabled on " table-name))))
+            [oc.change.resources.seen :as seen]
+            [oc.lib.dynamo.common :as ttl]))
 
 ;; NB: The fact that these migrations have been run already does not currently persist, so the up method
 ;; need to be idempotent
 (defn up [dynamodb-opts]
   (when-not (clojure.string/starts-with? (:endpoint dynamodb-opts) "http://localhost")
     ;; Add ttl to change table
-    (maybe-enable-ttl dynamodb-opts change/table-name)
+    (ttl/maybe-enable-ttl dynamodb-opts change/table-name)
 
     ;; Add ttl to seen table
-    (maybe-enable-ttl dynamodb-opts seen/table-name))
+    (ttl/maybe-enable-ttl dynamodb-opts seen/table-name))
 
   true) ; return true on success

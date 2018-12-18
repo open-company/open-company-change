@@ -4,7 +4,7 @@
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]
-            [oc.change.util.ttl :as ttl-util]))
+            [oc.lib.dynamo.common :as ttl]))
 
 (def entire-container "9999-9999-9999")
 
@@ -30,7 +30,7 @@
       :item-id item-id
       :user-id user-id
       :seen_at seen-at
-      :ttl (ttl-util/ttl-epoch c/seen-ttl)})
+      :ttl (ttl/ttl-epoch c/seen-ttl)})
   true))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
@@ -38,7 +38,7 @@
   (->> (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]}
         {:filter-expr "#k > :v"
          :expr-attr-names {"#k" "ttl"}
-         :expr-attr-vals {":v" (ttl-util/ttl-now)}})
+         :expr-attr-vals {":v" (ttl/ttl-now)}})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :seen_at :seen-at}))
       (map #(select-keys % [:container-id :item-id :seen-at]))))
 

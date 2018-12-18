@@ -4,7 +4,7 @@
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]
-            [oc.change.util.ttl :as ttl-util]))
+            [oc.lib.dynamo.common :as ttl]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_change")))
 
@@ -29,7 +29,7 @@
       :container_id container-id
       :item_id item-id
       :change_at change-at
-      :ttl (ttl-util/ttl-epoch c/change-ttl)})
+      :ttl (ttl/ttl-epoch c/change-ttl)})
   true)
 
 (schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
@@ -39,7 +39,7 @@
     (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]}
           {:filter-expr "#k > :v"
            :expr-attr-names {"#k" "ttl"}
-           :expr-attr-vals {":v" (ttl-util/ttl-now)}})
+           :expr-attr-vals {":v" (ttl/ttl-now)}})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
       (map #(select-keys % [:container-id :item-id :change-at])))))
 
