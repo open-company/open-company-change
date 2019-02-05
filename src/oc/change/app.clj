@@ -21,6 +21,7 @@
     [oc.lib.async.watcher :as watcher]
     [oc.change.config :as c]
     [oc.change.api.websockets :as websockets-api]
+    [oc.change.api.change :as change-api]
     [oc.change.async.persistence :as persistence]))
 
 ;; ----- Unhandled Exceptions -----
@@ -115,7 +116,8 @@
     (GET "/ping" [] {:body "OpenCompany Change Service: OK" :status 200}) ; Up-time monitor
     (GET "/---error-test---" [] (/ 1 0))
     (GET "/---500-test---" [] {:body "Testing bad things." :status 500})
-    (websockets-api/routes sys)))
+    (websockets-api/routes sys)
+    (change-api/routes sys)))
 
 ;; ----- System Startup -----
 

@@ -55,3 +55,5 @@
 (defonce draft-board-uuid "0000-0000-0000")
 (defonce change-ttl (or (env :oc-change-ttl) 30)) ; days
 (defonce seen-ttl (or (env :oc-seen-ttl) 30)) ; days
+
+(defonce passphrase (env :open-company-auth-passphrase))
