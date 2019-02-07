@@ -1,7 +1,6 @@
 (ns oc.change.api.change
   "Liberator API for change data."
-  (:require [taoensso.timbre :as timbre]
-            [if-let.core :refer (if-let*)]
+  (:require [if-let.core :refer (if-let*)]
             [liberator.core :refer (defresource by-method)]
             [compojure.core :as compojure :refer (GET ANY)]
             [cheshire.core :as json]
@@ -20,12 +19,6 @@
   (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
 
   :allowed-methods [:options :get]
-
-  ;; Media type client accepts
-  ;;:available-media-types (by-method {
-  ;;                          :get [user-rep/collection-media-type]})
-  ;;:handle-not-acceptable (by-method {
-  ;;                          :get (api-common/only-accept 406 user-rep/collection-media-type)})
 
   ;; Authorization
   :allowed? (by-method {
