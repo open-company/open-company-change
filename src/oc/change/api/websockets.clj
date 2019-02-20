@@ -213,7 +213,7 @@
 (defn routes [sys]
   (compojure/routes
     (GET "/change-socket/user/:user-id" req (ring-ajax-get-or-ws-handshake req))
-    (POST "/change-socket/user/:user-id" req (ring-ajax-get-or-ws-handshake req))))
+    (POST "/change-socket/user/:user-id" req (ring-ajax-post req))))
 
 ;; ----- Component start/stop -----
 
