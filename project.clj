@@ -41,7 +41,10 @@
     [org.apache.httpcomponents/httpclient "4.5.7"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.16.37"]
+    ;; -------------------------------------------------------
+    ;; NB: DO NOT UPGRADE TO 0.16.37 IT BREAKS WS CONNECTIONS
+    [open-company/lib "0.16.33"]
+    ;; -------------------------------------------------------
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
