@@ -101,6 +101,7 @@
     ;; Dev environment and dependencies
     :dev [:qa {
       :env ^:replace {
+        :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
         :log-level "debug"
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
