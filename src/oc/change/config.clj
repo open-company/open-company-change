@@ -57,3 +57,7 @@
 (defonce seen-ttl (or (env :oc-seen-ttl) 30)) ; days
 
 (defonce passphrase (env :open-company-auth-passphrase))
+
+;; ----- WS origin -----
+
+(defonce ensure-origin  (or (env :oc-ws-ensure-origin) false))

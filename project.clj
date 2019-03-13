@@ -43,7 +43,7 @@
     ;; Library for OC projects https://github.com/open-company/open-company-lib
     ;; -------------------------------------------------------
     ;; NB: DO NOT UPGRADE TO 0.16.37 IT BREAKS WS CONNECTIONS
-    [open-company/lib "0.16.33"]
+    [open-company/lib "0.16.39alpha-3"]
     ;; -------------------------------------------------------
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/

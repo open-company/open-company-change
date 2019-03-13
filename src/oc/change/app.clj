@@ -22,7 +22,8 @@
     [oc.change.config :as c]
     [oc.change.api.websockets :as websockets-api]
     [oc.change.api.change :as change-api]
-    [oc.change.async.persistence :as persistence]))
+    [oc.change.async.persistence :as persistence]
+    [oc.lib.middleware.wrap-ensure-origin :refer (wrap-ensure-origin)]))
 
 ;; ----- Unhandled Exceptions -----
 
@@ -130,6 +131,7 @@
     "Seen TTL: " c/seen-ttl " days\n"
     "AWS SQS change queue: " c/aws-sqs-change-queue "\n"
     "Hot-reload: " c/hot-reload "\n"
+    "Ensure origin: " c/ensure-origin "\n"
     "Sentry: " c/dsn "\n\n"
     (when c/intro? "Ready to serve...\n"))))
 
@@ -141,6 +143,7 @@
     true              wrap-keyword-params
     true              wrap-params
     true              (wrap-cors #".*")
+    c/ensure-origin   wrap-ensure-origin
     c/hot-reload      wrap-reload))
 
 (defn start
