@@ -14,7 +14,7 @@
   ;; All profile dependencies
   :dependencies [
     ;; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/clojure "1.10.0"]
+    [org.clojure/clojure "1.10.1-beta1"]
     ;; Command-line parsing https://github.com/clojure/tools.cli
     [org.clojure/tools.cli "0.4.1"] 
     ;; Web application library https://github.com/ring-clojure/ring
@@ -41,10 +41,7 @@
     [org.apache.httpcomponents/httpclient "4.5.7"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    ;; -------------------------------------------------------
-    ;; NB: DO NOT UPGRADE TO 0.16.37 IT BREAKS WS CONNECTIONS
-    [open-company/lib "0.16.39alpha-3"]
-    ;; -------------------------------------------------------
+    [open-company/lib "0.16.39-alpha4"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -102,6 +99,7 @@
     :dev [:qa {
       :env ^:replace {
         :open-company-auth-passphrase "this_is_a_dev_secret" ; JWT secret
+        :oc-ws-ensure-origin false ; local
         :log-level "debug"
         :aws-access-key-id "CHANGE-ME"
         :aws-secret-access-key "CHANGE-ME"
@@ -110,7 +108,7 @@
       :plugins [
         ;; Check for code smells https://github.com/dakrone/lein-bikeshed
         ;; NB: org.clojure/tools.cli is pulled in by lein-kibit
-        [lein-bikeshed "0.5.1" :exclusions [org.clojure/tools.cli]] 
+        [lein-bikeshed "0.5.2" :exclusions [org.clojure/tools.cli]] 
         ;; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-checkall "0.1.1"]
         ;; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint

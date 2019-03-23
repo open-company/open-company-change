@@ -42,6 +42,7 @@
 
 (defonce hot-reload (bool (or (env :hot-reload) false)))
 (defonce change-server-port (Integer/parseInt (or (env :port) "3006")))
+(defonce ensure-origin  (or (env :oc-ws-ensure-origin) true))
 
 ;; ----- AWS SQS -----
 
@@ -50,14 +51,10 @@
 
 (defonce aws-sqs-change-queue (env :aws-sqs-change-queue))
 
-;; ----- Change Service -----
+;; ----- Change service -----
 
 (defonce draft-board-uuid "0000-0000-0000")
 (defonce change-ttl (or (env :oc-change-ttl) 30)) ; days
 (defonce seen-ttl (or (env :oc-seen-ttl) 30)) ; days
 
 (defonce passphrase (env :open-company-auth-passphrase))
-
-;; ----- WS origin -----
-
-(defonce ensure-origin  (or (env :oc-ws-ensure-origin) false))
