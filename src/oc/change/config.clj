@@ -42,7 +42,7 @@
 
 (defonce hot-reload (bool (or (env :hot-reload) false)))
 (defonce change-server-port (Integer/parseInt (or (env :port) "3006")))
-(defonce ensure-origin  (or (env :oc-ws-ensure-origin) true))
+(defonce ensure-origin (bool (or (env :oc-ws-ensure-origin) true)))
 
 ;; ----- AWS SQS -----
 
