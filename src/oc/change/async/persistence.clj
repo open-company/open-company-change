@@ -52,6 +52,20 @@
     ; return the differences newly changed items & already seen items
     (vec (clojure.set/difference changed-items seen-items))))
 
+
+(defn- unread-items-for
+  "
+  Implements the unread item logic based on changes in the container, when
+  individual items were read.
+  "
+  [container-id all-changes all-reads]
+  (let [changes (filter #(= container-id (:container-id %)) all-changes) ; only changes for this container-id
+        reads (filter #(= container-id (:container-id %)) all-reads) ; only reads for this container-id
+        changed-items (set (map :item-id changes)) ; item ids of the changes for this container
+        read-items (set (map :item-id reads))] ; item ids read in the container
+    ; return the differences newly changed items & already read items
+    (vec (clojure.set/difference changed-items read-items))))
+
 (defn status-for
   "
   Given a set of changes to items in containers...
@@ -59,26 +73,36 @@
   Changes:
   {:container-id '1111-1111-1111', :item-id '2222-2222-2222', :change-at '2018-06-10T14:49:50.883Z'}
   {:container-id '1111-1111-1111', :item-id '3333-3333-3333', :change-at '2018-06-11T14:49:50.986Z'}
+  {:container-id '1111-1111-1111', :item-id '6666-6666-6666', :change-at '2018-06-14T14:49:50.107Z'}
   {:container-id '4444-4444-4444', :item-id '5555-5555-5555', :change-at '2018-06-12T14:49:57.107Z'})
 
-  And a set of seen events for the user (where '9999-9999-9999' means they saw everything in the container)...
+  A set of seen events for the user (where '9999-9999-9999' means they saw everything in the container)...
 
   Seens:
   {:container-id '1111-1111-1111', :item-id '2222-2222-2222', :seen-at '2018-06-11T11:23:51.395Z'}
   {:container-id '4444-4444-4444', :item-id '9999-9999-9999', :seen-at '2018-06-13T11:23:51.395Z'}
 
+  A set of read events for the user...
+
+  Reads:
+  {:container-id '1111-1111-1111', :item-id '2222-2222-2222', :read-at '2018-06-11T13:23:51.395Z'}
+  {:container-id '1111-1111-1111', :item-id '3333-3333-3333', :read-at '2018-06-13T15:23:51.395Z'}
+
   Returns a status for each container with the changes that haven't been seen....
 
   Status:
-  {:container-id '1111-1111-1111' :unseen ['3333-3333-3333']}
-  {:container-id '4444-4444-4444' :unseen []}
+  {:container-id '1111-1111-1111' :unseen ['3333-3333-3333'] :unread ['6666-6666-6666']}
+  {:container-id '4444-4444-4444' :unseen [] :unread ['5555-5555-5555']}
 
   In the above example, item '2222-2222-2222' was seen, item '3333-3333-3333' was not, and item '5555-5555-5555'
   was seen because the whole '4444-4444-4444' container was seen.
   "
-  [container-ids changes seens]
+  [container-ids changes seens reads]
   (timbre/debug "Check status for containers:" container-ids "with changes:" (vec changes) "and seens:" (vec seens))
-  (pmap #(hash-map :container-id % :unseen (unseen-items-for % changes seens)) container-ids))
+  (pmap #(hash-map :container-id %
+                   :unseen (unseen-items-for % changes seens)
+                   :unread (unread-items-for % changes reads))
+   container-ids))
 
 ;; ----- Event handling -----
 
@@ -102,8 +126,9 @@
     (timbre/info "Status request for:" container-ids "by:" user-id "/" client-id)
     (let [seens (filter #((set container-ids) (:container-id %)) (seen/retrieve user-id))
           all-seens (if just-seen (conj seens just-seen) seens) ; avoid a race condition in the DB
+          all-reads (filter #((set container-ids) (:container-id %)) (read/retrieve-by-user user-id))
           changes (change/retrieve container-ids)
-          status (status-for container-ids changes all-seens)]
+          status (status-for container-ids changes all-seens all-reads)]
       (>!! watcher/sender-chan {:event [:container/status status]
                                 :client-id client-id}))))
 

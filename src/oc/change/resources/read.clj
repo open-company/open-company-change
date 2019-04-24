@@ -3,7 +3,8 @@
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
-            [oc.change.config :as c]))
+            [oc.change.config :as c]
+            [oc.lib.dynamo.common :as ttl]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
 
@@ -43,8 +44,20 @@
       (map #(clojure.set/rename-keys % {:user_id :user-id :avatar_url :avatar-url :read_at :read-at}))
       (map #(select-keys % [:user-id :name :avatar-url :read-at]))))
 
+(schema/defn ^:always-validate retrieve-by-user :- [{:container-id lib-schema/UniqueID
+                                                     :item-id lib-schema/UniqueID
+                                                     :read-at lib-schema/ISO8601}]
+  [user-id :- lib-schema/UniqueID]
+  (->> (far/query c/dynamodb-opts table-name {:item_id [:gt " "]
+                                              :user_id [:eq user-id]}
+        {:filter-expr "#k > :v"
+         :expr-attr-names {"#k" "ttl"}
+         :expr-attr-vals {":v" (ttl/ttl-now)}})
+      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :read_at :read-at}))
+      (map #(select-keys % [:container-id :item-id :read-at]))))
+
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
-                                                :count schema/Int}]
+                                           :count schema/Int}]
   [item-ids :- [lib-schema/UniqueID]]
   (pmap count-for item-ids))
 
