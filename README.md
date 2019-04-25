@@ -253,13 +253,12 @@ Client sends a `:container/watch` message over the socket with a sequence of con
 ["1234-abcd-1234" "bcde-2345-bcde" "3456-a1b2-3456"]
 ```
 
-Server replies to the `:container/watch` message with a `:container/status` message that has the sequence of
-container times from the watch with the timestamps of most recent change for that container and most recent
-seen at for that user.
+Server replies to the `:container/watch` message with a `:container/status` message that has the sequence of items that have yet to be seen in each  container.
 
 ```clojure
-[{:container-id "1234-abcd-1234" :change-at ISO8601 :seen-at ISO8601} 
- {:container-id "3456-a1b2-3456" :change-at ISO8601 :seen-at ISO8601}]
+[{:container-id "1234-abcd-1234" :unseen ["abab-1212-abab" "cdcd-3434-cdcd"]}
+ {:container-id "bcde-2345-bcde" :unseen []}
+ {:container-id "3456-a1b2-3456" :unseen ["efef-5656-efef"]}]
 ```
 
 Note well: 
