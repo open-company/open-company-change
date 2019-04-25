@@ -262,14 +262,9 @@ Server replies to the `:container/watch` message with a `:container/status` mess
 ```
 
 Note well: 
-  * The most common container response in the sequence will have both a `:change-at` and a `:seen-at` property. The change service client can compare those two values, if the `:change-at` property is more recent than the `:seen-at` property, then the container has unseen content. If the `:seen-at` property is more recent than the `:change-at` property, then the container doesn't have unseen content for that user.
   * Some of the containers that were included in the `:container/watch` message may be missing, which indicates there is no record of the user having ever seen the container, or of the container having seen new content. The change service client is to treat this as there being no new content in the container for that user.
-  * Some containers in the sequence may be missing just the `:change-at` property which indicates there is no record of the container having seen new content. The change service client is to treat this as there being no new content for the container.
-  * Some containers in the sequence may be missing just the `:seen-at` property which indicates there is no record of
-the user having seen the container. The change service client is to treat this as there being new content in the container for that user.
 
-At any point, the client may send a `:container/seen` message containing a container UUID and a timestamp to
-indicate the user has seen the container.
+At any point, the client may send a `:container/seen` message containing a container UUID and a timestamp to indicate the user has seen the container.
 
 ```clojure
 {:container-id "1234-abcd-1234" seen-at: ISO8601}
@@ -281,8 +276,7 @@ At any point, the server may send a `:container/change`, this indicates new cont
 {:container-id "1234-abcd-1234" :change-at ISO8601 :user-id "5678-dcba-8765"}
 ```
 
-The client can subsequently send additional `:container/watch` messages at any time, typically when the user has created
-new containers during the session.
+The client can subsequently send additional `:container/watch` messages at any time, typically when the user has created new containers during the session.
 
 
 ## Testing
