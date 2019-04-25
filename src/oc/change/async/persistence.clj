@@ -117,8 +117,9 @@
   ;; READS
 
   ([message :guard :status]
-  ;; Lookup when a specified user saw specified containers and when the specified containers saw changes
-  ;; Send the merger of the 2 (by container-id) to the sender's channel as a container/status message
+  ;; Lookup when a specified user saw specified containers, when the specified containers saw changes,
+  ;; and when the specified user had reads in specified containers.
+  ;; Send the processed result to the sender's channel as a container/status message
   (let [user-id (:user-id message)
         container-ids (:container-ids message)
         client-id (:client-id message)
@@ -138,7 +139,7 @@
   (let [item-id (:item-id message)
         client-id (:client-id message)]
     (timbre/info "Who read request for:" item-id "by:" client-id)
-    (let [reads (read/retrieve item-id)
+    (let [reads (read/retrieve-by-item item-id)
           status {:item-id item-id :reads reads}]
       (>!! watcher/sender-chan {:event [:item/status status]
                                 :client-id client-id}))))
@@ -189,7 +190,7 @@
     (timbre/info "Read request for user:" user-id "for item:" item-id "at:" read-at " org: " org-id " container: " container-id " name: " user-name " avatar: " avatar-url)
     (read/store! org-id container-id item-id user-id user-name avatar-url read-at)
     ;; Send an item/status to everyone watching this container so they get the updated list of readers
-    (let [reads (read/retrieve item-id)
+    (let [reads (read/retrieve-by-item item-id)
           status {:item-id item-id :reads reads}]
       (>!! watcher/watcher-chan {:send true
                                  :watch-id container-id

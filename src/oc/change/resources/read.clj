@@ -35,10 +35,10 @@
       :read_at read-at})
   true))
 
-(schema/defn ^:always-validate retrieve :- [{:user-id lib-schema/UniqueID
-                                             :name schema/Str
-                                             :avatar-url (schema/maybe schema/Str)
-                                             :read-at lib-schema/ISO8601}]
+(schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
+                                                     :name schema/Str
+                                                     :avatar-url (schema/maybe schema/Str)
+                                                     :read-at lib-schema/ISO8601}]
   [item-id :- lib-schema/UniqueID]
   (->> (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]})
       (map #(clojure.set/rename-keys % {:user_id :user-id :avatar_url :avatar-url :read_at :read-at}))
@@ -82,12 +82,14 @@
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))
 
-  (read/retrieve "eeee-eeee-eeee")
+  (read/retrieve-by-item "eeee-eeee-eeee")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa")
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "bbbb-bbbb-bbbb"
                "Arthur Schopenhauer" "http//..." (oc-time/current-timestamp))
 
-  (read/retrieve "eeee-eeee-eeee")
+  (read/retrieve-by-item "eeee-eeee-eeee")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa")
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eee1" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))

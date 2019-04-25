@@ -337,13 +337,13 @@
                             :user-id "aaaa-aaaa-aaaa" :name "Albert Camus" :avatar-url "http//..."
                             :read-at (oc-time/current-timestamp)})
 
-  (read/retrieve "eeee-eeee-eeee")
+  (read/retrieve-by-item "eeee-eeee-eeee")
 
   (send-message :item/read {:org-id "1111-1111-1111" :container-id "cccc-cccc-cccc" :item-id "eeee-eeee-eeee" 
                             :user-id "bbbb-bbbb-bbbb" :name "Arthur Schopenhauer" :avatar-url "http//..."
                             :read-at (oc-time/current-timestamp)})
 
-  (read/retrieve "eeee-eeee-eeee")
+  (read/retrieve-by-item "eeee-eeee-eeee")
 
   (send-message :item/who-read ["eeee-eeee-eeee" ])
 

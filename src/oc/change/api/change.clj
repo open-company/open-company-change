@@ -27,7 +27,7 @@
   })
 
   ;; Existentialism
-  :exists? (fn [ctx] (if-let* [read-data (read/retrieve post-uuid)
+  :exists? (fn [ctx] (if-let* [read-data (read/retrieve-by-item post-uuid)
                                seen-data (seen/retrieve post-uuid)]
                               {:existing-post {:uuid post-uuid
                                                :seen seen-data
