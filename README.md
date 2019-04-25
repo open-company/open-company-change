@@ -174,7 +174,7 @@ time of the newest content in that container and the last time the user saw that
 
 ### DynamoDB Schema
 
-The DynamoDB schema is quite simple and is made up of 2 tables: `change`, and `seen`. To support multiple environments, these tables are prefixed with an environment name, such as `staging_change` or `production_seen`.
+The DynamoDB schema is quite simple and is made up of 3 tables: `change`, `seen` and `read`. To support multiple environments, these tables are prefixed with an environment name, such as `staging_change` or `production_seen`.
 
 The `change` table has a string partition key called `container_id` and a string sort key called `item_id`. A full item in the table is:
 
@@ -204,7 +204,7 @@ The `seen` table has a string partition key called `user_id`, and a string sort 
 
 The meaning of each item above is that the user specified by the `user_id` last saw the item specified by the `item_id` in the container specified by the `container_id` at the `change_at` time, and this record will expire and be removed from DynamoDB at `ttl` time (configured by `seen-ttl` in `config.clj`.
 
-Sometimes the `item_id` is a specific value which indicates they saw the entire container.
+Sometimes the `item_id` is a specific constant placeholder value which indicates they saw the entire container.
 
 The `read` table has a string partition key called `item_id`, and a string sort key called `user_id`. A full item in the table is:
 
