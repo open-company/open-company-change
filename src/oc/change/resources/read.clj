@@ -7,6 +7,7 @@
             [oc.lib.dynamo.common :as ttl]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
+(def user-id-gsi-name (keyword (str c/dynamodb-table-prefix "_read_gsi_user_id")))
 
 ;; In theory, DynamoDB (and by extension, Faraday) support `{:return :count}` but it doesn't seem to be working
 ;; https://github.com/ptaoussanis/faraday/issues/91
@@ -48,11 +49,9 @@
                                                      :item-id lib-schema/UniqueID
                                                      :read-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
-  (->> (far/query c/dynamodb-opts table-name {:item_id [:gt " "]
-                                              :user_id [:eq user-id]}
-        {:filter-expr "#k > :v"
-         :expr-attr-names {"#k" "ttl"}
-         :expr-attr-vals {":v" (ttl/ttl-now)}})
+  (->> 
+      ;(far/query c/dynamodb-opts table-name {:user_id [:eq user-id]} {:index (str user-id-gsi-name)})
+      ;(far/query c/dynamodb-opts user-id-gsi-name {:user_id [:eq user-id]})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :read_at :read-at}))
       (map #(select-keys % [:container-id :item-id :read-at]))))
 
@@ -76,6 +75,15 @@
       {:range-keydef [:user_id :s]
        :throughput {:read 1 :write 1}
        :block? true}))
+  (aprint 
+    (far/update-table config/dynamodb-opts
+      read/table-name
+      {:gsindexes {:operation :create
+                   :name read/user-id-gsi-name
+                   :throughput {:read 1 :write 1}
+                   :hash-keydef [:user_id :s]
+                   :range-keydef [:container_id :s]
+                   :projection :all}}))
 
   (aprint (far/describe-table config/dynamodb-opts read/table-name))
 

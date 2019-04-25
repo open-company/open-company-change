@@ -1,0 +1,20 @@
+(ns oc.change.db.migrations.add-gsi-to-read
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            [oc.change.resources.read :as read]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; need to be idempotent
+(defn up [dynamodb-opts]
+  
+  (far/update-table dynamodb-opts
+    read/table-name
+    {:gsindexes {:operation :create
+                 :name read/user-id-gsi-name
+                 :throughput {:read 1 :write 1}
+                 :hash-keydef [:user_id :s]
+                 :range-keydef [:container_id :s]
+                 :projection :all}})
+
+  true) ; return true on success
