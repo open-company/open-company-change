@@ -2,7 +2,7 @@
   "Liberator API for change data."
   (:require [if-let.core :refer (if-let*)]
             [liberator.core :refer (defresource by-method)]
-            [compojure.core :as compojure :refer (GET ANY)]
+            [compojure.core :as compojure :refer (GET OPTIONS)]
             [cheshire.core :as json]
             [oc.lib.api.common :as api-common]
             [oc.change.resources.seen :as seen]
@@ -40,7 +40,7 @@
 ;; Routes
 (defn routes [sys]
   (compojure/routes
-   ;; Assignee list operations
-      (ANY "/change/read/post/:post-uuid"
-        [post-uuid]
-        (post-read post-uuid))))
+    (OPTIONS "/change/read/post/:post-uuid" [post-uuid] (post-read post-uuid))
+    (OPTIONS "/change/read/post/:post-uuid/" [post-uuid] (post-read post-uuid))
+    (GET "/change/read/post/:post-uuid" [post-uuid] (post-read post-uuid))
+    (GET "/change/read/post/:post-uuid/" [post-uuid] (post-read post-uuid))))
