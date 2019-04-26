@@ -8,13 +8,14 @@
 ;; need to be idempotent
 (defn up [dynamodb-opts]
   
-  (far/update-table dynamodb-opts
-    read/table-name
-    {:gsindexes {:operation :create
-                 :name read/user-id-gsi-name
-                 :throughput {:read 1 :write 1}
-                 :hash-keydef [:user_id :s]
-                 :range-keydef [:container_id :s]
-                 :projection :all}})
+  (println 
+    (far/update-table dynamodb-opts
+      read/table-name
+      {:gsindexes {:operation :create
+                   :name read/user-id-gsi-name
+                   :throughput {:read 1 :write 1}
+                   :hash-keydef [:user_id :s]
+                   :range-keydef [:container_id :s]
+                   :projection :all}}))
 
   true) ; return true on success
