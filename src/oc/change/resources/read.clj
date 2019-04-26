@@ -7,7 +7,7 @@
             [oc.lib.dynamo.common :as ttl]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
-(def user-id-gsi-name (keyword (str c/dynamodb-table-prefix "_read_gsi_user_id")))
+(def user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_user_id"))
 
 ;; In theory, DynamoDB (and by extension, Faraday) support `{:return :count}` but it doesn't seem to be working
 ;; https://github.com/ptaoussanis/faraday/issues/91
@@ -50,8 +50,7 @@
                                                      :read-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
   (->> 
-      ;(far/query c/dynamodb-opts table-name {:user_id [:eq user-id]} {:index (str user-id-gsi-name)})
-      ;(far/query c/dynamodb-opts user-id-gsi-name {:user_id [:eq user-id]})
+      (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]} {:index user-id-gsi-name})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :read_at :read-at}))
       (map #(select-keys % [:container-id :item-id :read-at]))))
 
