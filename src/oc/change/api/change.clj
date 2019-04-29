@@ -52,4 +52,5 @@
     (OPTIONS "/change/read/post/:post-uuid/" [post-uuid] (post-read post-uuid))
     (GET "/change/read/post/:post-uuid" [post-uuid] (post-read post-uuid))
     (GET "/change/read/post/:post-uuid/" [post-uuid] (post-read post-uuid))
+    (DELETE "/change/read/post/:post-uuid" [post-uuid] (post-read post-uuid))
     (DELETE "/change/read/post/:post-uuid/" [post-uuid] (post-read post-uuid))))
