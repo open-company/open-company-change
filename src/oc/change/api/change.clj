@@ -27,6 +27,14 @@
     :delete true
   })
 
+  :available-media-types (by-method {:delete ["text/plain"]})
+
+  :known-content-type? (by-method {
+    :options true
+    :get true
+    :delete true
+  })
+
   ;; Existentialism
   :exists? (fn [ctx] (if-let* [read-data (read/retrieve-by-item post-uuid)
                                seen-data (seen/retrieve post-uuid)]
