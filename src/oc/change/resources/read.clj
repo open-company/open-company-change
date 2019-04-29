@@ -3,8 +3,7 @@
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
-            [oc.change.config :as c]
-            [oc.lib.dynamo.common :as ttl]))
+            [oc.change.config :as c]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
 (def user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_user_id"))
