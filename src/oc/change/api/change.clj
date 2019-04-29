@@ -18,7 +18,7 @@
 (defresource post-read [post-uuid]
   (api-common/open-company-authenticated-resource config/passphrase) ; verify validity and presence of required JWToken
 
-  :allowed-methods [:options :get]
+  :allowed-methods [:options :get :delete]
 
   ;; Authorization
   :allowed? (by-method {
