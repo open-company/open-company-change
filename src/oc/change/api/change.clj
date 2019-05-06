@@ -27,7 +27,7 @@
     :delete true
   })
 
-  :available-media-types (by-method {:delete ["text/plain"]})
+  :available-media-types (by-method {:delete ["text/plain"] :get nil})
 
   :known-content-type? (by-method {
     :options true
