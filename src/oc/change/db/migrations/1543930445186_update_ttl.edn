@@ -6,7 +6,7 @@
             [oc.lib.dynamo.common :as ttl]))
 
 ;; NB: The fact that these migrations have been run already does not currently persist, so the up method
-;; need to be idempotent
+;; needs to be idempotent
 (defn up [dynamodb-opts]
   (when-not (clojure.string/starts-with? (:endpoint dynamodb-opts) "http://localhost")
     ;; Add ttl to change table
