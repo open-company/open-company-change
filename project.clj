@@ -167,7 +167,7 @@
     "build" ["do" "clean," "deps," "compile"] ; clean and build code
     "create-migration" ["run" "-m" "oc.change.db.migrations" "create"] ; create a data migration
     "migrate-db" ["run" "-m" "oc.change.db.migrations" "migrate"] ; run pending data migrations
-    "start" ["do" "run"] ; start a development server
+    "start" ["do" "migrate-db" "run"] ; start a development server
     "start!" ["with-profile" "prod" "do" "start"] ; start a server in production
     "autotest" ["with-profile" "qa" "do" "midje" ":autotest"] ; watch for code changes and run affected tests
     "test!" ["with-profile" "qa" "do" "clean," "build," "midje"] ; run all tests
