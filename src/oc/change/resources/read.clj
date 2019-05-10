@@ -6,6 +6,7 @@
             [oc.change.config :as c]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
+(def user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_user_id"))
 
 ;; In theory, DynamoDB (and by extension, Faraday) support `{:return :count}` but it doesn't seem to be working
 ;; https://github.com/ptaoussanis/faraday/issues/91
@@ -15,7 +16,7 @@
     {:item-id item-id :count (count results)}))
 
 (schema/defn ^:always-validate store!
-  
+
   ;; Store a read entry for the specified user
   ([org-id :-  lib-schema/UniqueID
     container-id :- lib-schema/UniqueID
@@ -34,17 +35,34 @@
       :read_at read-at})
   true))
 
-(schema/defn ^:always-validate retrieve :- [{:user-id lib-schema/UniqueID
-                                             :name schema/Str
-                                             :avatar-url (schema/maybe schema/Str)
-                                             :read-at lib-schema/ISO8601}]
+(schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
+                                                     :name schema/Str
+                                                     :avatar-url (schema/maybe schema/Str)
+                                                     :read-at lib-schema/ISO8601}]
   [item-id :- lib-schema/UniqueID]
   (->> (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]})
       (map #(clojure.set/rename-keys % {:user_id :user-id :avatar_url :avatar-url :read_at :read-at}))
       (map #(select-keys % [:user-id :name :avatar-url :read-at]))))
 
+(schema/defn ^:always-validate retrieve-by-user :- [{(schema/optional-key :container-id) lib-schema/UniqueID
+                                                     :item-id lib-schema/UniqueID
+                                                     :read-at lib-schema/ISO8601}]
+  ([user-id :- lib-schema/UniqueID]
+  (->>
+      (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]} {:index user-id-gsi-name})
+      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :read_at :read-at}))
+      (map #(select-keys % [:container-id :item-id :read-at]))))
+
+  ([user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
+  (->>
+      (far/query c/dynamodb-opts table-name {:user_id [:eq user-id] :container_id [:eq container-id]}
+                                            {:index user-id-gsi-name})
+      (map #(clojure.set/rename-keys % {:item_id :item-id :read_at :read-at}))
+      (map #(select-keys % [:item-id :read-at])))))
+
+
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
-                                                :count schema/Int}]
+                                           :count schema/Int}]
   [item-ids :- [lib-schema/UniqueID]]
   (pmap count-for item-ids))
 
@@ -63,22 +81,35 @@
       {:range-keydef [:user_id :s]
        :throughput {:read 1 :write 1}
        :block? true}))
+  (aprint
+    (far/update-table config/dynamodb-opts
+      read/table-name
+      {:gsindexes {:operation :create
+                   :name read/user-id-gsi-name
+                   :throughput {:read 1 :write 1}
+                   :hash-keydef [:user_id :s]
+                   :range-keydef [:container_id :s]
+                   :projection :all}}))
 
   (aprint (far/describe-table config/dynamodb-opts read/table-name))
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))
 
-  (read/retrieve "eeee-eeee-eeee")
+  (read/retrieve-by-item "eeee-eeee-eeee")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa" "cccc-cccc-cccc")
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "bbbb-bbbb-bbbb"
                "Arthur Schopenhauer" "http//..." (oc-time/current-timestamp))
 
-  (read/retrieve "eeee-eeee-eeee")
+  (read/retrieve-by-item "eeee-eeee-eeee")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa" "eeee-eeee-eeee")
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eee1" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))
-  
+
   (read/counts ["eeee-eeee-eeee" "eeee-eeee-eee1"])
 
   (far/delete-table c/dynamodb-opts read/table-name)

@@ -14,9 +14,9 @@
   ;; All profile dependencies
   :dependencies [
     ;; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/clojure "1.10.1-beta1"]
+    [org.clojure/clojure "1.10.1-beta2"]
     ;; Command-line parsing https://github.com/clojure/tools.cli
-    [org.clojure/tools.cli "0.4.1"] 
+    [org.clojure/tools.cli "0.4.2"]
     ;; Web application library https://github.com/ring-clojure/ring
     [ring/ring-devel "1.7.1"]
     ;; Web application library https://github.com/ring-clojure/ring
@@ -29,7 +29,7 @@
     ;; Ring logging https://github.com/nberger/ring-logger-timbre
     ;; NB: com.taoensso/encore pulled in by oc.lib
     ;; NB: com.taoensso/timbre pulled in by oc.lib
-    [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore com.taoensso/timbre]] 
+    [ring-logger-timbre "0.7.6" :exclusions [com.taoensso/encore com.taoensso/timbre]]
     ;; Web routing https://github.com/weavejester/compojure
     [compojure "1.6.1"]
     ;; DynamoDB client https://github.com/ptaoussanis/faraday
@@ -38,10 +38,10 @@
     ;; NB: encore pulled in from oc.lib
     [com.taoensso/faraday "1.10.0-alpha1" :exclusions [com.amazonaws/aws-java-sdk-dynamodb joda-time com.taoensso/encore]]
     ;; Faraday dependency, not pulled in? https://hc.apache.org/
-    [org.apache.httpcomponents/httpclient "4.5.7"]
+    [org.apache.httpcomponents/httpclient "4.5.8"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.17.2"]
+    [open-company/lib "0.17.5"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
@@ -79,7 +79,7 @@
         ;; NB: clj-time is pulled in by oc.lib
         ;; NB: joda-time is pulled in by oc.lib via clj-time
         ;; NB: commons-codec pulled in by oc.lib
-        [midje "1.9.6" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]] 
+        [midje "1.9.8" :exclusions [joda-time org.clojure/tools.macro clj-time commons-codec]]
         ;; Clojure WebSocket client https://github.com/cch1/http.async.client
         [http.async.client "1.3.0"]
         ;; Test Ring requests https://github.com/weavejester/ring-mock
@@ -90,7 +90,7 @@
         [lein-midje "3.2.1"]
         ;; Linter https://github.com/jonase/eastwood
         [jonase/eastwood "0.3.5"]
-        ;; Static code search for non-idiomatic code https://github.com/jonase/kibit        
+        ;; Static code search for non-idiomatic code https://github.com/jonase/kibit
         [lein-kibit "0.1.6" :exclusions [org.clojure/clojure]]
       ]
     }
@@ -108,7 +108,7 @@
       :plugins [
         ;; Check for code smells https://github.com/dakrone/lein-bikeshed
         ;; NB: org.clojure/tools.cli is pulled in by lein-kibit
-        [lein-bikeshed "0.5.2" :exclusions [org.clojure/tools.cli]] 
+        [lein-bikeshed "0.5.2" :exclusions [org.clojure/tools.cli]]
         ;; Runs bikeshed, kibit and eastwood https://github.com/itang/lein-checkall
         [lein-checkall "0.1.1"]
         ;; pretty-print the lein project map https://github.com/technomancy/leiningen/tree/master/lein-pprint
@@ -119,7 +119,7 @@
         [lein-spell "0.1.0"]
         ;; Dead code finder https://github.com/venantius/yagni
         [venantius/yagni "0.1.7" :exclusions [org.clojure/clojure]]
-      ]  
+      ]
     }]
     :repl-config [:dev {
       :dependencies [
@@ -181,7 +181,7 @@
 
   :eastwood {
     ;; Disable some linters that are enabled by default:
-    ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond` 
+    ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond`
     ;; suspcious-experession - unfortunate, but it's failing on defrecord of a com.stuartsierra.component component
     ;; implicit-dependencies - uhh, just seems dumb
     :exclude-linters [:constant-test :suspicious-expression :implicit-dependencies]
@@ -197,7 +197,7 @@
   }
 
   :zprint {:old? false}
-  
+
   ;; ----- API -----
 
   :ring {

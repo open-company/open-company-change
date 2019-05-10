@@ -174,7 +174,7 @@ time of the newest content in that container and the last time the user saw that
 
 ### DynamoDB Schema
 
-The DynamoDB schema is quite simple and is made up of 2 tables: `change`, and `seen`. To support multiple environments, these tables are prefixed with an environment name, such as `staging_change` or `production_seen`.
+The DynamoDB schema is quite simple and is made up of 3 tables: `change`, `seen` and `read`. To support multiple environments, these tables are prefixed with an environment name, such as `staging_change` or `production_seen`.
 
 The `change` table has a string partition key called `container_id` and a string sort key called `item_id`. A full item in the table is:
 
@@ -204,7 +204,7 @@ The `seen` table has a string partition key called `user_id`, and a string sort 
 
 The meaning of each item above is that the user specified by the `user_id` last saw the item specified by the `item_id` in the container specified by the `container_id` at the `change_at` time, and this record will expire and be removed from DynamoDB at `ttl` time (configured by `seen-ttl` in `config.clj`.
 
-Sometimes the `item_id` is a specific value which indicates they saw the entire container.
+Sometimes the `item_id` is a specific constant placeholder value which indicates they saw the entire container.
 
 The `read` table has a string partition key called `item_id`, and a string sort key called `user_id`. A full item in the table is:
 
@@ -253,24 +253,18 @@ Client sends a `:container/watch` message over the socket with a sequence of con
 ["1234-abcd-1234" "bcde-2345-bcde" "3456-a1b2-3456"]
 ```
 
-Server replies to the `:container/watch` message with a `:container/status` message that has the sequence of
-container times from the watch with the timestamps of most recent change for that container and most recent
-seen at for that user.
+Server replies to the `:container/watch` message with a `:container/status` message that has the sequence of items that have yet to be seen in each  container.
 
 ```clojure
-[{:container-id "1234-abcd-1234" :change-at ISO8601 :seen-at ISO8601} 
- {:container-id "3456-a1b2-3456" :change-at ISO8601 :seen-at ISO8601}]
+[{:container-id "1234-abcd-1234" :unseen ["abab-1212-abab" "cdcd-3434-cdcd"]}
+ {:container-id "bcde-2345-bcde" :unseen []}
+ {:container-id "3456-a1b2-3456" :unseen ["efef-5656-efef"]}]
 ```
 
 Note well: 
-  * The most common container response in the sequence will have both a `:change-at` and a `:seen-at` property. The change service client can compare those two values, if the `:change-at` property is more recent than the `:seen-at` property, then the container has unseen content. If the `:seen-at` property is more recent than the `:change-at` property, then the container doesn't have unseen content for that user.
   * Some of the containers that were included in the `:container/watch` message may be missing, which indicates there is no record of the user having ever seen the container, or of the container having seen new content. The change service client is to treat this as there being no new content in the container for that user.
-  * Some containers in the sequence may be missing just the `:change-at` property which indicates there is no record of the container having seen new content. The change service client is to treat this as there being no new content for the container.
-  * Some containers in the sequence may be missing just the `:seen-at` property which indicates there is no record of
-the user having seen the container. The change service client is to treat this as there being new content in the container for that user.
 
-At any point, the client may send a `:container/seen` message containing a container UUID and a timestamp to
-indicate the user has seen the container.
+At any point, the client may send a `:container/seen` message containing a container UUID and a timestamp to indicate the user has seen the container.
 
 ```clojure
 {:container-id "1234-abcd-1234" seen-at: ISO8601}
@@ -282,8 +276,7 @@ At any point, the server may send a `:container/change`, this indicates new cont
 {:container-id "1234-abcd-1234" :change-at ISO8601 :user-id "5678-dcba-8765"}
 ```
 
-The client can subsequently send additional `:container/watch` messages at any time, typically when the user has created
-new containers during the session.
+The client can subsequently send additional `:container/watch` messages at any time, typically when the user has created new containers during the session.
 
 
 ## Testing
