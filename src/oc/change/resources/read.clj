@@ -3,8 +3,7 @@
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
-            [oc.change.config :as c]
-            [oc.lib.dynamo.common :as ttl]))
+            [oc.change.config :as c]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
 (def user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_user_id"))
@@ -17,7 +16,7 @@
     {:item-id item-id :count (count results)}))
 
 (schema/defn ^:always-validate store!
-  
+
   ;; Store a read entry for the specified user
   ([org-id :-  lib-schema/UniqueID
     container-id :- lib-schema/UniqueID
@@ -49,13 +48,13 @@
                                                      :item-id lib-schema/UniqueID
                                                      :read-at lib-schema/ISO8601}]
   ([user-id :- lib-schema/UniqueID]
-  (->> 
+  (->>
       (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]} {:index user-id-gsi-name})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :read_at :read-at}))
       (map #(select-keys % [:container-id :item-id :read-at]))))
 
   ([user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
-  (->> 
+  (->>
       (far/query c/dynamodb-opts table-name {:user_id [:eq user-id] :container_id [:eq container-id]}
                                             {:index user-id-gsi-name})
       (map #(clojure.set/rename-keys % {:item_id :item-id :read_at :read-at}))
@@ -82,7 +81,7 @@
       {:range-keydef [:user_id :s]
        :throughput {:read 1 :write 1}
        :block? true}))
-  (aprint 
+  (aprint
     (far/update-table config/dynamodb-opts
       read/table-name
       {:gsindexes {:operation :create
@@ -110,7 +109,7 @@
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eee1" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))
-  
+
   (read/counts ["eeee-eeee-eeee" "eeee-eeee-eee1"])
 
   (far/delete-table c/dynamodb-opts read/table-name)

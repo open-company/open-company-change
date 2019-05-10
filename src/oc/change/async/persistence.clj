@@ -21,7 +21,7 @@
 ;; ----- Utility methods -----
 
 (defun- persist
-  
+
   ;; Add an entry
   ([:add :entry container-id item-id author-id change-at]
   (timbre/info "Persisting entry change on:" item-id "for container:" container-id "and author:" author-id)
@@ -167,7 +167,7 @@
     (timbre/info "Seen request for user:" user-id "on:" container-id "at:" seen-at)
     (if (and item-id publisher-id)
       ;; upsert an item seen entry for the container and the author
-      (pmap #(seen/store! user-id % item-id seen-at) [container-id publisher-id]) 
+      (pmap #(seen/store! user-id % item-id seen-at) [container-id publisher-id])
       ;; upsert a seen entry for the container (NB: container here may also be a user, the author)
       (seen/store! user-id container-id seen-at))
     ;; recurse after upserting the message so it seems the client asked for status on the seen container...

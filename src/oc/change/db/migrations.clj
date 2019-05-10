@@ -12,7 +12,7 @@
     (assert (true? (m/run-migration conn migrations-dir migration-name))))
   :ok)
 
-(defn- migrate 
+(defn- migrate
   "
   Run all migrations on this DB.
   "
@@ -37,7 +37,7 @@
   lein migrate-db
   "
   [which & args]
-  (cond 
+  (cond
     (= which "migrate") (migrate c/dynamodb-opts c/migrations-dir)
     (= which "create") (apply m/create c/migrations-dir c/migration-template args)
     :else (println "Unknown action: " which)))
