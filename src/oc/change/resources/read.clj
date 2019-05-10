@@ -45,14 +45,22 @@
       (map #(clojure.set/rename-keys % {:user_id :user-id :avatar_url :avatar-url :read_at :read-at}))
       (map #(select-keys % [:user-id :name :avatar-url :read-at]))))
 
-(schema/defn ^:always-validate retrieve-by-user :- [{:container-id lib-schema/UniqueID
+(schema/defn ^:always-validate retrieve-by-user :- [{(schema/optional-key :container-id) lib-schema/UniqueID
                                                      :item-id lib-schema/UniqueID
                                                      :read-at lib-schema/ISO8601}]
-  [user-id :- lib-schema/UniqueID]
+  ([user-id :- lib-schema/UniqueID]
   (->> 
       (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]} {:index user-id-gsi-name})
       (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :read_at :read-at}))
       (map #(select-keys % [:container-id :item-id :read-at]))))
+
+  ([user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
+  (->> 
+      (far/query c/dynamodb-opts table-name {:user_id [:eq user-id] :container_id [:eq container-id]}
+                                            {:index user-id-gsi-name})
+      (map #(clojure.set/rename-keys % {:item_id :item-id :read_at :read-at}))
+      (map #(select-keys % [:item-id :read-at])))))
+
 
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
                                            :count schema/Int}]
@@ -91,12 +99,14 @@
 
   (read/retrieve-by-item "eeee-eeee-eeee")
   (read/retrieve-by-user "aaaa-aaaa-aaaa")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa" "cccc-cccc-cccc")
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eeee" "bbbb-bbbb-bbbb"
                "Arthur Schopenhauer" "http//..." (oc-time/current-timestamp))
 
   (read/retrieve-by-item "eeee-eeee-eeee")
   (read/retrieve-by-user "aaaa-aaaa-aaaa")
+  (read/retrieve-by-user "aaaa-aaaa-aaaa" "eeee-eeee-eeee")
 
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eee1" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))
