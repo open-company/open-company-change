@@ -91,7 +91,7 @@
                                                              :resource-type resource-type
                                                              :item-id item-id
                                                              :author-id user-id}))
-        
+
           (timbre/info "Alerting watcher of add/update/delete msg from SQS.")
           (>!! watcher/watcher-chan {:send true
                                      :watch-id container-id
@@ -101,7 +101,7 @@
                                                :item-id item-id
                                                :user-id user-id
                                                :change-at change-at}}))
-      
+
         ;; Org or unknown
         (cond
          (= resource-type :org)

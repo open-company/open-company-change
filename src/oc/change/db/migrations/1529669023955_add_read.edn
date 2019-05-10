@@ -5,7 +5,7 @@
             [oc.change.resources.read :as read]))
 
 ;; NB: The fact that these migrations have been run already does not currently persist, so the up method
-;; need to be idempotent
+;; needs to be idempotent
 (defn up [dynamodb-opts]
 
   ;; Create new table if needed

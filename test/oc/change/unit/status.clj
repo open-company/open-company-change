@@ -26,7 +26,7 @@
    :item-id item
    :read-at (str timestamp)})
 
-(facts 
+(facts
 
   (fact "a container with no change has an empty status"
     (pers/status-for [container-1] [] [] []) => [{:container-id container-1 :unseen [] :unread []}])
@@ -67,16 +67,16 @@
   (fact "asking about multiple containers at the same time returns the correct status"
     (pers/status-for [container-1 container-2] [] [] []) => [{:container-id container-1 :unseen [] :unread []}
                                                              {:container-id container-2 :unseen [] :unread []}]
-    (pers/status-for [container-1 container-2] [(change-for container-1 item-1 1)] [] []) => 
+    (pers/status-for [container-1 container-2] [(change-for container-1 item-1 1)] [] []) =>
                                                          [{:container-id container-1 :unseen [item-1] :unread [item-1]}
                                                           {:container-id container-2 :unseen [] :unread []}]
-    (pers/status-for [container-1 container-2] [(change-for container-2 item-1 1)] [] []) => 
+    (pers/status-for [container-1 container-2] [(change-for container-2 item-1 1)] [] []) =>
                                                          [{:container-id container-1 :unseen [] :unread []}
                                                           {:container-id container-2 :unseen [item-1] :unread [item-1]}]
-    (pers/status-for [container-1 container-2] [(change-for container-1 item-1 1)] [(seen-for container-2 item-1 2)] []) => 
+    (pers/status-for [container-1 container-2] [(change-for container-1 item-1 1)] [(seen-for container-2 item-1 2)] []) =>
                                                          [{:container-id container-1 :unseen [item-1] :unread [item-1]}
                                                           {:container-id container-2 :unseen [] :unread []}]
-    (pers/status-for [container-1 container-2] [(change-for container-1 item-1 1)] [(seen-for container-1 item-1 2)] []) => 
+    (pers/status-for [container-1 container-2] [(change-for container-1 item-1 1)] [(seen-for container-1 item-1 2)] []) =>
                                                          [{:container-id container-1 :unseen [] :unread [item-1]}
                                                           {:container-id container-2 :unseen [] :unread []}])
 
