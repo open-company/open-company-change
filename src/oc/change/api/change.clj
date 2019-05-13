@@ -10,7 +10,7 @@
             [oc.change.config :as config]))
 
 ;; Representations
-(defn- render-count [count]
+(defn- render-post-change [count]
   (json/generate-string {:post count}))
 
 ;; Resources
@@ -51,7 +51,7 @@
                          {:deleted-items false})))
 
   ;; Responses
-  :handle-ok (fn [ctx] (render-count (:existing-post ctx))))
+  :handle-ok (fn [ctx] (render-post-change (:existing-post ctx))))
 
 ;; Routes
 (defn routes [sys]
