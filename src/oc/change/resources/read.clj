@@ -35,6 +35,11 @@
       :read_at read-at})
   true))
 
+(schema/defn ^:always-validate delete!
+  [item-id :- lib-schema/UniqueID user-id :- lib-schema/UniqueID]
+  (far/delete-item c/dynamodb-opts table-name {:item_id item-id
+                                               :user_id user-id}))
+
 (schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
                                                      :name schema/Str
                                                      :avatar-url (schema/maybe schema/Str)
