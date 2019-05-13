@@ -4,18 +4,30 @@
             [oc.change.config :as config]
             [oc.change.resources.read :as read]))
 
+(defn gsi-exists-on-table?
+  "Returns true if the global secondary index with the given name exists on the
+  table named table-name, false otherwise."
+  [dynamodb-opts index-name table-name]
+  (let [index-key          (keyword index-name)
+        matches-index-key? #(= index-key (:name %))
+        table-desc         (far/describe-table dynamodb-opts table-name)
+        gsindexes          (:gsindexes table-desc)]
+    (some matches-index-key? gsindexes)))
+
 ;; NB: The fact that these migrations have been run already does not currently persist, so the up method
 ;; needs to be idempotent
 (defn up [dynamodb-opts]
 
   (println
-   @(far/update-table dynamodb-opts
-                      read/table-name
-                      {:gsindexes {:operation :create
-                                   :name read/user-id-gsi-name
-                                   :throughput {:read 1 :write 1}
-                                   :hash-keydef [:user_id :s]
-                                   :range-keydef [:container_id :s]
-                                   :projection :all}}))
+   (if (gsi-exists-on-table? dynamodb-opts read/user-id-gsi-name read/table-name)
+     (format "%s index already exists on %s, skipping" read/user-id-gsi-name read/table-name)
+     @(far/update-table dynamodb-opts
+                        read/table-name
+                        {:gsindexes {:operation :create
+                                     :name read/user-id-gsi-name
+                                     :throughput {:read 1 :write 1}
+                                     :hash-keydef [:user_id :s]
+                                     :range-keydef [:container_id :s]
+                                     :projection :all}})))
 
   true) ; return true on success
