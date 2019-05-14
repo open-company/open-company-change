@@ -11,6 +11,16 @@
             [oc.change.resources.read :as read]
             [oc.change.config :as config]))
 
+(defn- notify-watchers-of-unread!
+  [container-id post-id]
+  (when container-id
+    (let [read-data (read/retrieve-by-item post-id)
+          status {:item-id post-id :reads read-data}]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id container-id
+                                 :event :item/status
+                                 :payload status}))))
+
 ;; Representations
 (defn- render-post-change [post]
   (json/generate-string {:post post}))
@@ -51,13 +61,7 @@
                            container-id (-> ctx :request :body slurp)]
                        (if (nil? delete-item)
                          (do
-                           (when container-id
-                             (let [read-data (read/retrieve-by-item post-uuid)
-                                   status {:item-id post-uuid :reads read-data}]
-                               (>!! watcher/watcher-chan {:send true
-                                                          :watch-id container-id
-                                                          :event :item/status
-                                                          :payload status})))
+                           (notify-watchers-of-unread! container-id post-uuid)
                            {:deleted-items :ok})
                          {:deleted-items false})))
 
