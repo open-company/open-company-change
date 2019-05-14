@@ -1,17 +1,29 @@
 (ns oc.change.api.change
   "Liberator API for change data."
-  (:require [if-let.core :refer (if-let*)]
+  (:require [clojure.core.async :as async :refer (>!!)]
+            [if-let.core :refer (if-let*)]
             [liberator.core :refer (defresource by-method)]
             [compojure.core :as compojure :refer (GET OPTIONS DELETE)]
             [cheshire.core :as json]
             [oc.lib.api.common :as api-common]
+            [oc.lib.async.watcher :as watcher]
             [oc.change.resources.seen :as seen]
             [oc.change.resources.read :as read]
             [oc.change.config :as config]))
 
+(defn- notify-watchers-of-unread!
+  [container-id post-id]
+  (when container-id
+    (let [read-data (read/retrieve-by-item post-id)
+          status {:item-id post-id :reads read-data}]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id container-id
+                                 :event :item/status
+                                 :payload status}))))
+
 ;; Representations
-(defn- render-post-change [count]
-  (json/generate-string {:post count}))
+(defn- render-post-change [post]
+  (json/generate-string {:post post}))
 
 ;; Resources
 
@@ -45,9 +57,12 @@
 
   :delete! (fn [ctx] (let [user (:user ctx)
                            user-id (:user-id user)
-                           delete-item (read/delete! post-uuid user-id)]
+                           delete-item (read/delete! post-uuid user-id)
+                           container-id (-> ctx :request :body slurp)]
                        (if (nil? delete-item)
-                         {:deleted-items :ok}
+                         (do
+                           (notify-watchers-of-unread! container-id post-uuid)
+                           {:deleted-items :ok})
                          {:deleted-items false})))
 
   ;; Responses
