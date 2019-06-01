@@ -6,7 +6,7 @@
     :url "https://www.gnu.org/licenses/agpl-3.0.en.html"
   }
 
-  :min-lein-version "2.7.1"
+  :min-lein-version "2.9.1"
 
   ;; JVM memory
   :jvm-opts ^:replace ["-Xms512m" "-Xmx3072m" "-server"]
@@ -14,7 +14,7 @@
   ;; All profile dependencies
   :dependencies [
     ;; Lisp on the JVM http://clojure.org/documentation
-    [org.clojure/clojure "1.10.1-beta2"]
+    [org.clojure/clojure "1.10.1-RC1"]
     ;; Command-line parsing https://github.com/clojure/tools.cli
     [org.clojure/tools.cli "0.4.2"]
     ;; Web application library https://github.com/ring-clojure/ring
@@ -41,7 +41,7 @@
     [org.apache.httpcomponents/httpclient "4.5.8"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.17.5"]
+    [open-company/lib "0.17.11"]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
