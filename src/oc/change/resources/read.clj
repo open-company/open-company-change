@@ -68,7 +68,7 @@
 
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
                                            :count schema/Int
-                                           :last-read-at lib-schema/ISO8601}]
+                                           :last-read-at (schema/maybe lib-schema/ISO8601)}]
   [item-ids :- [lib-schema/UniqueID] user-id :- lib-schema/UniqueID]
   (pmap (partial count-for user-id) item-ids))
 
