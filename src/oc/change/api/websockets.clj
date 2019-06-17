@@ -171,7 +171,7 @@
         client-id (-> ring-req :params :client-id)
         item-ids ?data]
     (timbre/info "[websocket] item/who-read-count for:" item-ids)
-    (>!! persistence/persistence-chan {:who-read-count true :item-ids item-ids :client-id client-id})))
+    (>!! persistence/persistence-chan {:who-read-count true :item-ids item-ids :client-id client-id :user-id user-id})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 

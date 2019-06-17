@@ -10,10 +10,9 @@
 
 ;; In theory, DynamoDB (and by extension, Faraday) support `{:return :count}` but it doesn't seem to be working
 ;; https://github.com/ptaoussanis/faraday/issues/91
-;; `{return [:none]}` is simply a way to get an empty map for every item, then we count the empty maps
-(defn- count-for [item-id]
-  (let [results (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]} {:return [:none]})]
-    {:item-id item-id :count (count results)}))
+(defn- count-for [user-id item-id]
+  (let [results (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]})]
+    {:item-id item-id :count (count results) :last-read-at (:read_at (last (sort-by :read-at (filterv #(= (:user_id %) user-id) results))))}))
 
 (schema/defn ^:always-validate store!
 
@@ -67,9 +66,10 @@
 
 
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
-                                           :count schema/Int}]
-  [item-ids :- [lib-schema/UniqueID]]
-  (pmap count-for item-ids))
+                                           :count schema/Int
+                                           :last-read-at (schema/maybe lib-schema/ISO8601)}]
+  [item-ids :- [lib-schema/UniqueID] user-id :- lib-schema/UniqueID]
+  (pmap (partial count-for user-id) item-ids))
 
 (comment
 
@@ -115,7 +115,7 @@
   (read/store! "1111-1111-1111" "cccc-cccc-cccc" "eeee-eeee-eee1" "aaaa-aaaa-aaaa"
                "Albert Camus" "http//..." (oc-time/current-timestamp))
 
-  (read/counts ["eeee-eeee-eeee" "eeee-eeee-eee1"])
+  (read/counts ["eeee-eeee-eeee" "eeee-eeee-eee1"] "1234-1234-1234")
 
   (far/delete-table c/dynamodb-opts read/table-name)
 )
