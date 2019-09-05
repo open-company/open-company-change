@@ -24,12 +24,22 @@
 
   ;; Add an entry
   ([:add :entry container-id item-id author-id change-at]
-  (timbre/info "Persisting entry change on:" item-id "for container:" container-id "and author:" author-id)
+  (timbre/info "Persisting add entry change on:" item-id "for container:" container-id "and author:" author-id)
   (pmap #(change/store! % item-id change-at) [container-id author-id]))
 
   ;; Delete an entry
+  ([:delete :entry container-id item-id _author-id _change-at]
+  (timbre/info "Persisting delete entry change on:" item-id "for container:" container-id)
+  (change/delete-by-item! item-id)
+  (seen/delete-by-item! item-id)
+  (read/delete-by-item! item-id))
 
   ;; Delete a board
+  ([:delete :board container-id _item-id _author-id _change-at]
+  (timbre/info "Persisting delete board change for container:" container-id)
+  (change/delete-by-container! container-id)
+  (seen/delete-by-container! container-id)
+  (read/delete-by-container! container-id))
 
   ;; Else
   ([_op _resource _container _item _author _change]

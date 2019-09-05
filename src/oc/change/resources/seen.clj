@@ -33,6 +33,14 @@
       :ttl (ttl/ttl-epoch c/seen-ttl)})
   true))
 
+(schema/defn ^:always-validate delete-by-item!
+  [item-id :- lib-schema/UniqueID]
+  (far/delete-item c/dynamodb-opts table-name {:item_id item-id}))
+
+(schema/defn ^:always-validate delete-by-container!
+  [container-id :- lib-schema/UniqueID]
+  (far/delete-item c/dynamodb-opts table-name {:container_id container-id}))
+
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
   (->> (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]}
