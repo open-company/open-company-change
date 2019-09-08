@@ -23,26 +23,40 @@
 (defun- persist
 
   ;; Add an entry
-  ([:add :entry container-id item-id author-id change-at]
+  ([:add :entry container-id item-id author-id change-at _new-item _old-item]
   (timbre/info "Persisting add entry change on:" item-id "for container:" container-id "and author:" author-id)
   (pmap #(change/store! % item-id change-at) [container-id author-id]))
 
   ;; Delete an entry
-  ([:delete :entry container-id item-id _author-id _change-at]
+  ([:delete :entry container-id item-id _author-id _change-at _new-item _old-item]
   (timbre/info "Persisting delete entry change on:" item-id "for container:" container-id)
-  (change/delete-by-item! item-id)
-  (seen/delete-by-item! item-id)
-  (read/delete-by-item! item-id))
+  (change/delete-by-item!  container-id item-id)
+  (seen/delete-by-item! container-id item-id)
+  (read/delete-by-item! container-id item-id))
+
+  ([:update :entry container-id item-id _author-id _change-at new-item old-item]
+  (timbre/info "Persisting update entry change for item:" item-id "and container:" container-id)
+  ;; If the board changed in the entry but not during a publish action:
+  (when (and new-item
+             old-item
+             (not= (:board-uuid new-item) (:board-uuid old-item))
+             ;; We keep change/read/seen data only for published posts
+             ;; no need to keep them for drafts or while publishing
+             (= (name (:status old-item)) "published")
+             (= (name (:status new-item)) "published"))
+    (change/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
+    (seen/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
+    (read/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))))
 
   ;; Delete a board
-  ([:delete :board container-id _item-id _author-id _change-at]
+  ([:delete :board container-id _item-id _author-id _change-at _new-item _old-item]
   (timbre/info "Persisting delete board change for container:" container-id)
   (change/delete-by-container! container-id)
   (seen/delete-by-container! container-id)
   (read/delete-by-container! container-id))
 
   ;; Else
-  ([_op _resource _container _item _author _change]
+  ([_op _resource _container _item _author _change _new-item _old-item]
   (timbre/trace "No persistence needed.")))
 
 (defn- unseen-items-for
@@ -215,10 +229,12 @@
         resource-type (:resource-type message)
         change-type (:change-type message)
         author-id (:author-id message)
-        change-at (:change-at message)]
+        change-at (:change-at message)
+        new-item (:new-item message)
+        old-item (:old-item message)]
     (timbre/info resource-type change-type "request on:" item-id  "in:" container-id
                                            "by:" author-id "at:" change-at)
-    (persist change-type resource-type container-id item-id author-id change-at)))
+    (persist change-type resource-type container-id item-id author-id change-at new-item old-item)))
 
   ([message]
   (timbre/warn "Unknown request in persistence channel" message)))
