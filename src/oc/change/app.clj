@@ -58,10 +58,12 @@
   (doseq [body (sqs/read-message-body (:body msg))]
     (let [msg-body (json/parse-string (:Message body) true)
           change-type (keyword (:notification-type msg-body))
+          new-item (-> msg-body :content :new)
+          old-item (-> msg-body :content :old)
           resource-type (keyword (:resource-type msg-body))
-          draft?   (or (= "draft" (-> msg-body :content :new :status))
+          draft?   (or (= "draft" (:status new-item))
                        (and (= change-type :delete)
-                            (= "draft" (-> msg-body :content :old :status))))
+                            (= "draft" (:status old-item))))
           user-id (-> msg-body :user :user-id)
           container-id  (if draft?
                           (str c/draft-board-uuid "-" user-id) ;; attach author id
@@ -72,9 +74,9 @@
                             (clojure.string/replace container-id
                                                     (str "-" user-id) "")
                             container-id)
-          item-id (or (-> msg-body :content :new :uuid) ; new or update
-                      (-> msg-body :content :old :uuid)) ; delete
-          change-at (or (-> msg-body :content :new :updated-at) ; add / update
+          item-id (or (:uuid new-item) ; new or update
+                      (:uuid old-item)) ; delete
+          change-at (or (:updated-at new-item) ; add / update
                         (:notification-at msg-body))] ; delete
       (timbre/info "Received message from SQS:" msg-body)
       (if (and
@@ -90,7 +92,9 @@
                                                              :container-id container-id
                                                              :resource-type resource-type
                                                              :item-id item-id
-                                                             :author-id user-id}))
+                                                             :author-id user-id
+                                                             :new-item new-item
+                                                             :old-item old-item}))
 
           (timbre/info "Alerting watcher of add/update/delete msg from SQS.")
           (>!! watcher/watcher-chan {:send true
