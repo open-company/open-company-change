@@ -7,6 +7,8 @@
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
 (def user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_user_id"))
+(def container-id-item-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_container_id_item_id"))
+(def container-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_container_id"))
 
 ;; In theory, DynamoDB (and by extension, Faraday) support `{:return :count}` but it doesn't seem to be working
 ;; https://github.com/ptaoussanis/faraday/issues/91
@@ -40,12 +42,30 @@
                                                :user_id user-id}))
 
 (schema/defn ^:always-validate delete-by-item!
-  [item-id :- lib-schema/UniqueID]
-  (far/delete-item c/dynamodb-opts table-name {:item_id item-id}))
+  [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  (doseq [item (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]} {:index container-id-item-id-gsi-name})]
+    (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id item)
+                                                 :user_id (:user_id item)})))
 
 (schema/defn ^:always-validate delete-by-container!
   [container-id :- lib-schema/UniqueID]
-  (far/delete-item c/dynamodb-opts table-name {:container_id container-id}))
+  (doseq [item (far/query c/dynamodb-opts table-name {:container_id [:eq container-id]} {:index container-id-gsi-name})]
+    (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id item)
+                                                 :user_id (:user_id item)})))
+
+(schema/defn ^:always-validate move-item!
+  [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
+  (doseq [item (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]} {:index container-id-item-id-gsi-name})]
+    (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id item)
+                                                 :user_id (:user_id item)})
+    (far/put-item c/dynamodb-opts table-name {
+      :org_id (:org_id item)
+      :container_id new-container-id
+      :item_id (:item_id item)
+      :user_id (:user_id item)
+      :name (:name item)
+      :avatar_url (:avatar_url item)
+      :read_at (:read_at item)})))
 
 (schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
                                                      :name schema/Str
@@ -103,6 +123,39 @@
                    :hash-keydef [:user_id :s]
                    :range-keydef [:container_id :s]
                    :projection :all}}))
+
+  ;; Add GSI for delete all via item-id
+  (aprint
+    @(far/update-table config/dynamodb-opts
+      read/table-name
+      {:gsindexes {:operation :create
+                   :name read/container-id-item-id-gsi-name
+                   :throughput {:read 1 :write 1}
+                   :hash-keydef [:item_id :s]
+                   :range-keydef [:container_id :s]
+                   :projection :keys-only}}))
+
+  (doseq [item (far/query config/dynamodb-opts read/table-name {:item_id [:eq "512b-4ad1-9924"]} {:index read/container-id-item-id-gsi-name})]
+    (aprint
+      (far/delete-item config/dynamodb-opts read/table-name {:item_id (:item_id item)
+                                                             :user_id (:user_id item)})))
+
+  ;; Add GSI for delete all via container-id
+  (aprint @(far/update-table config/dynamodb-opts read/table-name
+            {:gsindexes
+              {:operation :create
+               :name read/container-id-gsi-name
+               :throughput {:read 1 :write 1}
+               :hash-keydef [:container_id :s]
+               :range-keydef [:user_id :s]
+               :projection :keys-only}}))
+
+  (doseq [item (far/query config/dynamodb-opts read/table-name {:container_id [:eq "25a3-4692-bf02"]} {:index read/container-id-gsi-name})]
+    (aprint
+      (far/delete-item config/dynamodb-opts read/table-name {:item_id (:item_id item)
+                                                             :user_id (:user_id item)})))
+
+  (far/update-table config/dynamodb-opts read/table-name {:gsindexes {:operation :delete :name read/container-id-gsi-name}})
 
   (aprint (far/describe-table config/dynamodb-opts read/table-name))
 

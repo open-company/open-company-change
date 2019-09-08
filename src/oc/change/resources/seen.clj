@@ -10,6 +10,9 @@
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_seen")))
 
+(def container-id-item-id-gsi-name (str c/dynamodb-table-prefix "_seen_gsi_container_id_item_id"))
+(def container-id-gsi-name (str c/dynamodb-table-prefix "_seen_gsi_container_id"))
+
 (schema/defn ^:always-validate store!
   
   ;; Saw the whole container, so the item-id is a placeholder
@@ -34,12 +37,31 @@
   true))
 
 (schema/defn ^:always-validate delete-by-item!
-  [item-id :- lib-schema/UniqueID]
-  (far/delete-item c/dynamodb-opts table-name {:item_id item-id}))
+  [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  (doseq [item (far/query c/dynamodb-opts table-name {:item-id [:eq item-id]} {:index container-id-item-id-gsi-name})]
+    (far/delete-item c/dynamodb-opts table-name {:container_item_id (:container_item_id item)
+                                                 :user_id (:user_id item)})))
 
 (schema/defn ^:always-validate delete-by-container!
   [container-id :- lib-schema/UniqueID]
-  (far/delete-item c/dynamodb-opts table-name {:container_id container-id}))
+  (doseq [item (far/query c/dynamodb-opts table-name {:container_id [:eq container-id]} {:index container-id-gsi-name})]
+    (far/delete-item c/dynamodb-opts table-name {:container_item_id (:container_item_id item)
+                                                 :user_id (:user_id item)})))
+
+(schema/defn ^:always-validate move-item!
+  [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
+  (doseq [item (far/query c/dynamodb-opts table-name {:item-id [:eq item-id] :container_id [:eq old-container-id]}
+              {:index container-id-item-id-gsi-name})]
+    (far/delete-item c/dynamodb-opts table-name {:container_item_id (:container_item_id item)
+                                                 :user_id (:user_id item)})
+    (far/put-item c/dynamodb-opts table-name {
+      :user_id (:user_id item)
+      :container_item_id (str new-container-id "-" (:item-id item))
+      :container_id (:container_id item)
+      :item-id (:item-id item)
+      :user-id (:user-id item)
+      :seen_at (:seen_at item)
+      :ttl (:ttl item)})))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
@@ -47,7 +69,7 @@
         {:filter-expr "#k > :v"
          :expr-attr-names {"#k" "ttl"}
          :expr-attr-vals {":v" (ttl/ttl-now)}})
-      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :seen_at :seen-at}))
+      (map #(clojure.set/rename-keys % {:container_id :container-id :item-id :item-id :seen_at :seen-at}))
       (map #(select-keys % [:container-id :item-id :seen-at]))))
 
 (comment
@@ -65,8 +87,41 @@
       {:range-keydef [:container_item_id :s]
        :throughput {:read 1 :write 1}
        :block? true}))
+  ;; GSI used for delete via item-id
+  (aprint
+    @(far/update-table config/dynamodb-opts
+      seen/table-name
+      {:gsindexes {:operation :create
+                   :name seen/container-id-item-id-gsi-name
+                   :throughput {:read 1 :write 1}
+                   :hash-keydef [:item-id :s]
+                   :range-keydef [:container_id :s]
+                   :projection :keys-only}}))
 
-  (aprint (far/describe-table c/dynamodb-opts seen/table-name))
+  (doseq [item (far/query config/dynamodb-opts seen/table-name {:item-id [:eq "512b-4ad1-9924"]} {:index seen/container-id-item-id-gsi-name})]
+    (aprint
+      (far/delete-item config/dynamodb-opts seen/table-name {:container_item_id (:container_item_id item)
+                                                             :user_id (:user_id item)})))
+
+  ;; GSI used for delete via container-id
+  (aprint
+    @(far/update-table config/dynamodb-opts
+      seen/table-name
+      {:gsindexes {:operation :create
+                   :name seen/container-id-gsi-name
+                   :throughput {:read 1 :write 1}
+                   :hash-keydef [:container_id :s]
+                   :range-keydef [:user_id :s]
+                   :projection :keys-only}}))
+
+  (doseq [item (far/query config/dynamodb-opts seen/table-name {:container_id [:eq "25a3-4692-bf02"]} {:index seen/container-id-gsi-name})]
+    (aprint
+      (far/delete-item config/dynamodb-opts seen/table-name {:container_item_id (:container_item_id item)
+                                                             :user_id (:user_id item)})))
+
+  (far/delete-item config/dynamodb-opts seen/table-name {:container_item_id "25a3-4692-bf02-512b-4ad1-9924"})
+
+  (aprint (far/describe-table config/dynamodb-opts seen/table-name))
 
   (seen/store! "abcd-1234-abcd" "5678-edcb-5678" (oc-time/current-timestamp))
 

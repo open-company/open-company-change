@@ -7,6 +7,7 @@
             [oc.lib.dynamo.common :as ttl]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_change")))
+(def container-id-item-id-gsi-name (str c/dynamodb-table-prefix "_change_gsi_container_id_item_id"))
 
 (defn draft-id? [s]
   (if (and s
@@ -33,12 +34,28 @@
   true)
 
 (schema/defn ^:always-validate delete-by-item!
-  [item-id :- lib-schema/UniqueID]
-  (far/delete-item c/dynamodb-opts table-name {:item_id item-id}))
+  [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  (far/delete-item c/dynamodb-opts table-name {:container_id container-id
+                                               :item_id item-id}))
 
 (schema/defn ^:always-validate delete-by-container!
   [container-id :- lib-schema/UniqueID]
-  (far/delete-item c/dynamodb-opts table-name {:container_id container-id}))
+  (doseq [item (far/query c/dynamodb-opts table-name {:container_id [:eq container-id]})]
+    (far/delete-item c/dynamodb-opts table-name {:container_id container-id
+                                                 :item_id (:item_id item)})))
+
+(schema/defn ^:always-validate move-item!
+  [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
+  (println "DBG change/move-item")
+  (doseq [item (far/query c/dynamodb-opts table-name {:item_id [:eq item-id] :container_id [:eq old-container-id]})]
+    (println "DBG    item:" item)
+    (far/delete-item c/dynamodb-opts table-name {:container_id (:container_id item)
+                                                 :item_id (:item_id item)})
+    (far/put-item c/dynamodb-opts table-name {
+      :container_id new-container-id
+      :item_id item-id
+      :change_at (:change_at item)
+      :ttl (:ttl item)})))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
   [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
@@ -66,6 +83,22 @@
       {:range-keydef [:item_id :s]
        :throughput {:read 1 :write 1}
        :block? true}))
+
+  ;; GSI used for delete via container-id
+  (aprint
+    @(far/update-table config/dynamodb-opts
+      change/table-name
+      {:gsindexes {:operation :create
+                   :name change/container-id-item-id-gsi-name
+                   :throughput {:read 1 :write 1}
+                   :hash-keydef [:item_id :s]
+                   :range-keydef [:container_id :s]
+                   :projection :keys-only}}))
+
+  (doseq [item (far/query config/dynamodb-opts change/table-name {:item_id [:eq "512b-4ad1-9924"]} {:index change/container-id-item-id-gsi-name})]
+    (aprint
+      (far/delete-item config/dynamodb-opts change/table-name {:container_id (:container_id item)
+                                                               :item_id (:item_id item)})))
 
   (aprint (far/describe-table c/dynamodb-opts change/table-name))
 
