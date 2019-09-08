@@ -1,0 +1,83 @@
+(ns oc.change.db.migrations.add-delete-gsindexes
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            [oc.change.resources.read :as read]
+            [oc.change.resources.seen :as seen]
+            [oc.change.resources.change :as change]
+            [oc.change.resources.common :refer (gsi-exists-on-table?)]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; needs to be idempotent
+(defn up [dynamodb-opts]
+
+  (when (= config/dynamodb-table-prefix "local")
+    (println "You may need to run this migration twice since local DynamoDB has limit of 1 add/remove GSI per table")
+    (println "since it tries to emulate the real AWS DynamoDB service which has a limit of 5."))
+
+  (println "")
+  (println
+    (if (gsi-exists-on-table? dynamodb-opts seen/container-id-item-id-gsi-name seen/table-name)
+      (format "%s index already exists on %s, skipping" seen/container-id-item-id-gsi-name seen/table-name)
+      @(far/update-table dynamodb-opts
+        seen/table-name
+        {:gsindexes {:operation :create
+                     :name seen/container-id-item-id-gsi-name
+                     :throughput {:read 1 :write 1}
+                     :hash-keydef [:item-id :s]
+                     :range-keydef [:container_id :s]
+                     :projection :keys-only}})))
+
+  (println "")
+  (println
+    (if (gsi-exists-on-table? dynamodb-opts read/container-id-item-id-gsi-name read/table-name)
+      (format "%s index already exists on %s, skipping" read/container-id-item-id-gsi-name read/table-name)
+      @(far/update-table dynamodb-opts
+        read/table-name
+        {:gsindexes {:operation :create
+                     :name read/container-id-item-id-gsi-name
+                     :throughput {:read 1 :write 1}
+                     :hash-keydef [:item_id :s]
+                     :range-keydef [:container_id :s]
+                     :projection :keys-only}})))
+
+  (println "")
+  (println
+    (if (gsi-exists-on-table? dynamodb-opts change/container-id-item-id-gsi-name change/table-name)
+      (format "%s index already exists on %s, skipping" change/container-id-item-id-gsi-name change/table-name)
+      @(far/update-table dynamodb-opts
+        change/table-name
+        {:gsindexes {:operation :create
+                     :name change/container-id-item-id-gsi-name
+                     :throughput {:read 1 :write 1}
+                     :hash-keydef [:item_id :s]
+                     :range-keydef [:container_id :s]
+                     :projection :keys-only}})))
+  
+  (println "")
+  (println
+    (if (gsi-exists-on-table? dynamodb-opts seen/container-id-gsi-name seen/table-name)
+      (format "%s index already exists on %s, skipping" seen/container-id-gsi-name seen/table-name)
+      @(far/update-table dynamodb-opts
+        seen/table-name
+        {:gsindexes {:operation :create
+                     :name seen/container-id-gsi-name
+                     :throughput {:read 1 :write 1}
+                     :hash-keydef [:container_id :s]
+                     :range-keydef [:user_id :s]
+                     :projection :keys-only}})))
+
+  (println "")
+  (println
+    (if (gsi-exists-on-table? dynamodb-opts read/container-id-gsi-name read/table-name)
+      (format "%s index already exists on %s, skipping" read/container-id-gsi-name read/table-name)
+      @(far/update-table dynamodb-opts read/table-name
+        {:gsindexes
+          {:operation :create
+           :name read/container-id-gsi-name
+           :throughput {:read 1 :write 1}
+           :hash-keydef [:container_id :s]
+           :range-keydef [:user_id :s]
+           :projection :keys-only}})))
+
+  true) ; return true on success
