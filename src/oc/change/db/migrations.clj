@@ -8,7 +8,7 @@
 (defn- run-migrations
   "Given a list of migrations, run them. Abort if any doesn't succeed."
   [conn migrations-dir migration-names]
-  (doseq [migration-name (map #(second (re-matches #".*\/(.*).edn$" %)) (map str migration-names))]
+  (doseq [migration-name (map #(second (re-matches #".*\/(.*).edn$" %)) (sort (map str migration-names)))]
     (assert (true? (m/run-migration conn migrations-dir migration-name))))
   :ok)
 
