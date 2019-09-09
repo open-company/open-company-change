@@ -46,9 +46,7 @@
 
 (schema/defn ^:always-validate move-item!
   [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
-  (println "DBG change/move-item")
   (doseq [item (far/query c/dynamodb-opts table-name {:item_id [:eq item-id] :container_id [:eq old-container-id]})]
-    (println "DBG    item:" item)
     (far/delete-item c/dynamodb-opts table-name {:container_id (:container_id item)
                                                  :item_id (:item_id item)})
     (far/put-item c/dynamodb-opts table-name {
