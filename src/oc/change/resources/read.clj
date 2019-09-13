@@ -56,16 +56,17 @@
 (schema/defn ^:always-validate move-item!
   [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
   (doseq [item (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]} {:index container-id-item-id-gsi-name})]
-    (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id item)
-                                                 :user_id (:user_id item)})
-    (far/put-item c/dynamodb-opts table-name {
-      :org-id (:org-id item)
-      :container_id new-container-id
-      :item_id (:item_id item)
-      :user_id (:user_id item)
-      :name (:name item)
-      :avatar_url (:avatar_url item)
-      :read_at (:read_at item)})))
+    (let [full-item (far/get-item c/dynamodb-opts table-name {:item_id [:eq (:item_id item)] :user_id [:eq (:user_id item)]})]
+      (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id full-item)
+                                                   :user_id (:user_id full-item)})
+      (far/put-item c/dynamodb-opts table-name {
+        :org-id (:org-id full-item)
+        :container_id new-container-id
+        :item_id (:item_id full-item)
+        :user_id (:user_id full-item)
+        :name (:name full-item)
+        :avatar_url (:avatar_url full-item)
+        :read_at (:read_at full-item)}))))
 
 (schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
                                                      :name schema/Str

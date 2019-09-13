@@ -13,6 +13,9 @@
 (def container-id-item-id-gsi-name (str c/dynamodb-table-prefix "_seen_gsi_container_id_item_id"))
 (def container-id-gsi-name (str c/dynamodb-table-prefix "_seen_gsi_container_id"))
 
+(defn- create-container-item-id [container-id item-id]
+  (str container-id "-" item-id))
+
 (schema/defn ^:always-validate store!
   
   ;; Saw the whole container, so the item-id is a placeholder
@@ -28,7 +31,7 @@
     seen-at :- lib-schema/ISO8601]
   (far/put-item c/dynamodb-opts table-name {
       :user_id user-id
-      :container_item_id (str container-id "-" item-id)
+      :container_item_id (create-container-item-id container-id item-id)
       :container_id container-id
       :item-id item-id
       :user-id user-id
@@ -52,16 +55,19 @@
   [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
   (doseq [item (far/query c/dynamodb-opts table-name {:item-id [:eq item-id] :container_id [:eq old-container-id]}
               {:index container-id-item-id-gsi-name})]
-    (far/delete-item c/dynamodb-opts table-name {:container_item_id (:container_item_id item)
-                                                 :user_id (:user_id item)})
-    (far/put-item c/dynamodb-opts table-name {
-      :user_id (:user_id item)
-      :container_item_id (str new-container-id "-" (:item-id item))
-      :container_id (:container_id item)
-      :item-id (:item-id item)
-      :user-id (:user-id item)
-      :seen_at (:seen_at item)
-      :ttl (:ttl item)})))
+    (let [old-container-item-id (create-container-item-id old-container-id item-id)
+          new-container-item-id (create-container-item-id new-container-id item-id)
+          full-item (far/get-item c/dynamodb-opts table-name {:user_id [:eq (:user_id item)] :container_item_id [:eq old-container-item-id]})]
+      (far/delete-item c/dynamodb-opts table-name {:container_item_id (:container_item_id full-item)
+                                                   :user_id (:user_id full-item)})
+      (far/put-item c/dynamodb-opts table-name {
+        :user_id (:user_id full-item)
+        :container_item_id new-container-item-id
+        :container_id (:container_id full-item)
+        :item-id (:item-id full-item)
+        :user-id (:user-id full-item)
+        :seen_at (:seen_at full-item)
+        :ttl (:ttl full-item)}))))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
