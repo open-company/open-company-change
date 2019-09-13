@@ -44,6 +44,7 @@
              ;; no need to keep them for drafts or while publishing
              (= (name (:status old-item)) "published")
              (= (name (:status new-item)) "published"))
+    (timbre/info "Moving item " item-id "from container:" (:board-uuid old-item) "to container:" (:board-uuid new-item))
     (change/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
     (seen/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
     (read/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))))
