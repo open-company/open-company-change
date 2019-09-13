@@ -59,7 +59,7 @@
     (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id item)
                                                  :user_id (:user_id item)})
     (far/put-item c/dynamodb-opts table-name {
-      :org_id (:org_id item)
+      :org-id (:org-id item)
       :container_id new-container-id
       :item_id (:item_id item)
       :user_id (:user_id item)
