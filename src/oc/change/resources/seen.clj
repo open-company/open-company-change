@@ -3,6 +3,7 @@
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
+            [taoensso.timbre :as timbre]
             [oc.change.config :as c]
             [oc.lib.dynamo.common :as ttl]))
 
@@ -53,21 +54,24 @@
 
 (schema/defn ^:always-validate move-item!
   [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
-  (doseq [item (far/query c/dynamodb-opts table-name {:item-id [:eq item-id] :container_id [:eq old-container-id]}
-              {:index container-id-item-id-gsi-name})]
-    (let [old-container-item-id (create-container-item-id old-container-id item-id)
-          new-container-item-id (create-container-item-id new-container-id item-id)
-          full-item (far/get-item c/dynamodb-opts table-name {:user_id [:eq (:user_id item)] :container_item_id [:eq old-container-item-id]})]
-      (far/delete-item c/dynamodb-opts table-name {:container_item_id (:container_item_id full-item)
-                                                   :user_id (:user_id full-item)})
-      (far/put-item c/dynamodb-opts table-name {
-        :user_id (:user_id full-item)
-        :container_item_id new-container-item-id
-        :container_id (:container_id full-item)
-        :item-id (:item-id full-item)
-        :user-id (:user-id full-item)
-        :seen_at (:seen_at full-item)
-        :ttl (:ttl full-item)}))))
+  (let [items-to-move (far/query c/dynamodb-opts table-name {:item-id [:eq item-id] :container_id [:eq old-container-id]}
+                       {:index container-id-item-id-gsi-name})]
+    (timbre/info "Seen move-item! for" item-id "moving:" (count items-to-move) "items from container" old-container-id "to" new-container-id)
+    (doseq [item items-to-move]
+      (let [old-container-item-id (create-container-item-id old-container-id item-id)
+            new-container-item-id (create-container-item-id new-container-id item-id)
+            full-item (far/get-item c/dynamodb-opts table-name {:user_id (:user_id item) :container_item_id old-container-item-id})]
+
+        (far/delete-item c/dynamodb-opts table-name {:container_item_id (:container_item_id full-item)
+                                                     :user_id (:user_id full-item)})
+        (far/put-item c/dynamodb-opts table-name {
+          :user_id (:user_id full-item)
+          :container_item_id new-container-item-id
+          :container_id (:container_id full-item)
+          :item-id (:item-id full-item)
+          :user-id (:user-id full-item)
+          :seen_at (:seen_at full-item)
+          :ttl (:ttl full-item)})))))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id lib-schema/UniqueID :item-id lib-schema/UniqueID :seen-at lib-schema/ISO8601}]
   [user-id :- lib-schema/UniqueID]
