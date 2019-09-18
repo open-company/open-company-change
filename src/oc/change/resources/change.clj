@@ -48,16 +48,15 @@
 (schema/defn ^:always-validate move-item!
   [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
   (let [items-to-move (far/query c/dynamodb-opts table-name {:item_id [:eq item-id] :container_id [:eq old-container-id]})]
-    (timbre/info "Change move-item! for" item-id " moving:" (count items-to-move) "from container" old-container-id "to" new-container-id)
+    (timbre/info "Change move-item! for" item-id "moving:" (count items-to-move) "items from container" old-container-id "to" new-container-id)
     (doseq [item items-to-move]
-      (let [full-item (far/get-item c/dynamodb-opts table-name {:container_id [:eq old-container-id] :item_id [:eq item-id]})]
-        (far/delete-item c/dynamodb-opts table-name {:container_id (:container_id full-item)
-                                                     :item_id (:item_id full-item)})
-        (far/put-item c/dynamodb-opts table-name {
-          :container_id new-container-id
-          :item_id item-id
-          :change_at (:change_at full-item)
-          :ttl (:ttl full-item)})))))
+      (far/delete-item c/dynamodb-opts table-name {:container_id (:container_id item)
+                                                   :item_id (:item_id item)})
+      (far/put-item c/dynamodb-opts table-name {
+        :container_id new-container-id
+        :item_id item-id
+        :change_at (:change_at item)
+        :ttl (:ttl item)}))))
 
 (schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
   [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
