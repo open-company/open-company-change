@@ -57,12 +57,12 @@
   [msg done-channel]
   (doseq [body (sqs/read-message-body (:body msg))]
     (let [msg-body (json/parse-string (:Message body) true)
-          change-type (keyword (:notification-type msg-body))
+          notification-change-type (keyword (:notification-type msg-body))
           new-item (-> msg-body :content :new)
           old-item (-> msg-body :content :old)
           resource-type (keyword (:resource-type msg-body))
           draft?   (or (= "draft" (:status new-item))
-                       (and (= change-type :delete)
+                       (and (= notification-change-type :delete)
                             (= "draft" (:status old-item))))
           user-id (-> msg-body :user :user-id)
           container-id  (if draft?
@@ -77,10 +77,27 @@
           item-id (or (:uuid new-item) ; new or update
                       (:uuid old-item)) ; delete
           change-at (or (:updated-at new-item) ; add / update
-                        (:notification-at msg-body))] ; delete
+                        (:notification-at msg-body)) ; delete
+          move-item? (and (= resource-type :entry)
+                          new-item
+                          old-item
+                          (not= (:board-uuid new-item) (:board-uuid old-item))
+                          ;; We keep change/read/seen data only for published posts
+                          ;; no need to keep them for drafts or while publishing
+                          (= (name (:status old-item)) "published")
+                          (= (name (:status new-item)) "published"))
+          change-type (if move-item? :move notification-change-type)
+          ws-base-payload {:container-id payload-cont-id
+                           :change-type change-type
+                           :item-id item-id
+                           :user-id user-id
+                           :change-at change-at}
+          ws-payload (if (= change-type :move)
+                       (assoc ws-base-payload :old-container-id (:board-uuid old-item))
+                       ws-base-payload)]
       (timbre/info "Received message from SQS:" msg-body)
       (if (and
-           (or (= change-type :add) (= change-type :update) (= change-type :delete))
+           (or (= change-type :add) (= change-type :update) (= change-type :delete) (= change-type :move))
            (or (= resource-type :entry) (= resource-type :board)))
 
         ;; Add/update/delete of entry/board
@@ -99,12 +116,10 @@
           (timbre/info "Alerting watcher of add/update/delete msg from SQS.")
           (>!! watcher/watcher-chan {:send true
                                      :watch-id container-id
-                                     :event (if (= resource-type :entry) :item/change :container/change)
-                                     :payload {:container-id payload-cont-id
-                                               :change-type change-type
-                                               :item-id item-id
-                                               :user-id user-id
-                                               :change-at change-at}}))
+                                     :event (if (= resource-type :entry)
+                                              :item/change
+                                              :container/change)
+                                     :payload ws-payload}))
 
         ;; Org or unknown
         (cond

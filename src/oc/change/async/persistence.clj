@@ -34,20 +34,11 @@
   (seen/delete-by-item! container-id item-id)
   (read/delete-by-item! container-id item-id))
 
-  ([:update :entry container-id item-id _author-id _change-at new-item old-item]
-  (timbre/info "Persisting update entry change for item:" item-id "and container:" container-id)
-  ;; If the board changed in the entry but not during a publish action:
-  (when (and new-item
-             old-item
-             (not= (:board-uuid new-item) (:board-uuid old-item))
-             ;; We keep change/read/seen data only for published posts
-             ;; no need to keep them for drafts or while publishing
-             (= (name (:status old-item)) "published")
-             (= (name (:status new-item)) "published"))
-    (timbre/info "Moving item " item-id "from container:" (:board-uuid old-item) "to container:" (:board-uuid new-item))
-    (change/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
-    (seen/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
-    (read/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))))
+  ([:move :entry container-id item-id _author-id _change-at new-item old-item]
+  (timbre/info "Persisting move entry change for item:" item-id "from container:" (:board-uuid old-item) "to container:" (:board-uuid new-item))
+  (change/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
+  (seen/move-item! item-id (:board-uuid old-item) (:board-uuid new-item))
+  (read/move-item! item-id (:board-uuid old-item) (:board-uuid new-item)))
 
   ;; Delete a board
   ([:delete :board container-id _item-id _author-id _change-at _new-item _old-item]
