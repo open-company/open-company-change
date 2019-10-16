@@ -51,10 +51,12 @@
 
 (defonce aws-sqs-change-queue (env :aws-sqs-change-queue))
 
+;; ----- JWT -----
+
+(defonce passphrase (env :open-company-auth-passphrase))
+
 ;; ----- Change service -----
 
 (defonce draft-board-uuid "0000-0000-0000")
 (defonce change-ttl (or (env :oc-change-ttl) (* 30 6))) ; 6 months
 (defonce seen-ttl (or (env :oc-seen-ttl) (* 30 6))) ; days
-
-(defonce passphrase (env :open-company-auth-passphrase))
