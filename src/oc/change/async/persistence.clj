@@ -1,6 +1,6 @@
 (ns oc.change.async.persistence
   "
-  Persist seen events and chage events.
+  Persist seen events and change events.
 
   Use of this persistence is through core/async. A message is sent to the `persistence-chan`.
   "
