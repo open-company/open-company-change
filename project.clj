@@ -36,7 +36,7 @@
     ;; NB: com.amazonaws/aws-java-sdk-dynamodb is pulled in by amazonica
     ;; NB: joda-time is pulled in by clj-time
     ;; NB: encore pulled in from oc.lib
-    [com.taoensso/faraday "1.9.0-beta1" :exclusions [com.amazonaws/aws-java-sdk-dynamodb joda-time com.taoensso/encore]]
+    [com.taoensso/faraday "1.10.0" :exclusions [com.amazonaws/aws-java-sdk-dynamodb joda-time com.taoensso/encore]]
     ;; Faraday dependency, not pulled in? https://hc.apache.org/
     [org.apache.httpcomponents/httpclient "4.5.10"]
 
