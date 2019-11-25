@@ -14,7 +14,7 @@
       read/table-name
       [:item_id :s]
       {:range-keydef [:user_id :s]
-       :throughput {:read 1 :write 1}
+       :billing-mode :pay-per-request
        :block? true}))
 
   true) ; return true on success
