@@ -103,7 +103,6 @@
       seen/table-name
       {:gsindexes {:operation :create
                    :name seen/container-id-item-id-gsi-name
-                   :billing-mode :pay-per-request
                    :hash-keydef [:item-id :s]
                    :range-keydef [:container_id :s]
                    :projection :keys-only}}))
@@ -119,7 +118,6 @@
       seen/table-name
       {:gsindexes {:operation :create
                    :name seen/container-id-gsi-name
-                   :billing-mode :pay-per-request
                    :hash-keydef [:container_id :s]
                    :range-keydef [:user_id :s]
                    :projection :keys-only}}))
