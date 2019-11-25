@@ -16,6 +16,7 @@
                         read/table-name
                         {:gsindexes {:operation :create
                                      :name read/user-id-gsi-name
+                                     :billing-mode :pay-per-request
                                      :hash-keydef [:user_id :s]
                                      :range-keydef [:container_id :s]
                                      :projection :all}})))
