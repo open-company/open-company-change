@@ -45,19 +45,23 @@
   Handle an incoming SQS message to the change service.
 
   {
-    :notification-type 'add|update|delete',
+    :notification-type 'add|update|delete|dismiss|follow|unfollow',
     :notification-at ISO8601,
     :user {...},
     :org {...},
     :board {...},
     :content {:new {...},
-              :old {...}}
+              :old {...},
+              :inbox-action {:?dismiss-at ISO8601,
+                             :?follow Bool,
+                             :?unfollow Bool}}
   }
   "
   [msg done-channel]
   (doseq [body (sqs/read-message-body (:body msg))]
     (let [msg-body (json/parse-string (:Message body) true)
           notification-change-type (keyword (:notification-type msg-body))
+          notification-content (:content msg-body)
           new-item (-> msg-body :content :new)
           old-item (-> msg-body :content :old)
           resource-type (keyword (:resource-type msg-body))
@@ -87,20 +91,38 @@
                           (= (name (:status old-item)) "published")
                           (= (name (:status new-item)) "published"))
           change-type (if move-item? :move notification-change-type)
+          ?inbox-action (:inbox-action notification-content)
           ws-base-payload {:container-id payload-cont-id
                            :change-type change-type
                            :item-id item-id
                            :user-id user-id
                            :change-at change-at}
-          ws-payload (if (= change-type :move)
+          ws-payload (cond
+                       (= change-type :move)
                        (assoc ws-base-payload :old-container-id (:board-uuid old-item))
-                       ws-base-payload)]
+                       (#{:dismiss :follow :unfollow} change-type)
+                       (merge ws-base-payload {:inbox-action ?inbox-action
+                                               :self true})
+                       :else
+                       ws-base-payload)
+          client-id (:client-id ?inbox-action)]
       (timbre/info "Received message from SQS:" msg-body)
-      (if (and
+      (cond
+        (and (= resource-type :entry)
+             (or (= change-type :dismiss) (= change-type :follow) (= change-type :unfollow))
+             ?inbox-action)
+        (do
+          (timbre/info "Alerting watcher of entry dismiss/follow/unfollow msg from SQS.")
+          (>!! watcher/watcher-chan {:send true
+                                     :watch-id container-id
+                                     :event :entry/inbox-action
+                                     :sender-ws-client-id client-id
+                                     :payload ws-payload}))
+        ;; Add/update/delete of entry/board
+        (and
            (or (= change-type :add) (= change-type :update) (= change-type :delete) (= change-type :move))
            (or (= resource-type :entry) (= resource-type :board)))
 
-        ;; Add/update/delete of entry/board
         (do
           (timbre/info "Requesting persistence for entry add/update/delete msg from SQS.")
           (>!! persistence/persistence-chan (merge msg-body {:change true
@@ -120,8 +142,8 @@
                                               :item/change
                                               :container/change)
                                      :payload ws-payload}))
-
         ;; Org or unknown
+        :else
         (cond
          (= resource-type :org)
          (timbre/warn "Unhandled org message from SQS:" change-type resource-type)
