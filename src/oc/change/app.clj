@@ -45,7 +45,7 @@
   Handle an incoming SQS message to the change service.
 
   {
-    :notification-type 'add|update|delete|dismiss|follow|unfollow',
+    :notification-type 'add|update|delete|dismiss|follow|unfollow|comment-add',
     :notification-at ISO8601,
     :user {...},
     :org {...},
@@ -100,19 +100,22 @@
           ws-payload (cond
                        (= change-type :move)
                        (assoc ws-base-payload :old-container-id (:board-uuid old-item))
+                       (= change-type :comment-add)
+                       (merge ws-base-payload {:inbox-action ?inbox-action
+                                               :users (:users msg-body)})
                        (#{:dismiss :follow :unfollow} change-type)
                        (merge ws-base-payload {:inbox-action ?inbox-action
-                                               :self true})
+                                               :self (#{:dismiss :follow :unfollow :comment-add} change-type)})
                        :else
                        ws-base-payload)
           client-id (:client-id ?inbox-action)]
       (timbre/info "Received message from SQS:" msg-body)
       (cond
         (and (= resource-type :entry)
-             (or (= change-type :dismiss) (= change-type :follow) (= change-type :unfollow))
+             (or (= change-type :dismiss) (= change-type :follow) (= change-type :unfollow) (= change-type :comment-add))
              ?inbox-action)
         (do
-          (timbre/info "Alerting watcher of entry dismiss/follow/unfollow msg from SQS.")
+          (timbre/info "Alerting watcher of entry dismiss/follow/unfollow/comment-ad msg from SQS.")
           (>!! watcher/watcher-chan {:send true
                                      :watch-id container-id
                                      :event :entry/inbox-action
