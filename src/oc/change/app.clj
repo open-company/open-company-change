@@ -100,6 +100,7 @@
           ws-payload (cond
                        (= change-type :move)
                        (assoc ws-base-payload :old-container-id (:board-uuid old-item))
+
                        (= change-type :comment-add)
                        (merge ws-base-payload {:inbox-action ?inbox-action
                                                :users (:users msg-body)})
@@ -108,7 +109,8 @@
                                                :self (#{:dismiss :follow :unfollow :comment-add} change-type)})
                        :else
                        ws-base-payload)
-          client-id (:client-id ?inbox-action)]
+          client-id (:client-id ?inbox-action)
+          ws-sender-client-id (:sender-ws-client-id msg-body)]
       (timbre/info "Received message from SQS:" msg-body)
       (cond
         (and (= resource-type :entry)
@@ -144,6 +146,7 @@
                                      :event (if (= resource-type :entry)
                                               :item/change
                                               :container/change)
+                                     :sender-ws-client-id ws-sender-client-id
                                      :payload ws-payload}))
         ;; Org or unknown
         :else
