@@ -94,7 +94,8 @@
                            :change-at change-at}
           ws-payload (if (= change-type :move)
                        (assoc ws-base-payload :old-container-id (:board-uuid old-item))
-                       ws-base-payload)]
+                       ws-base-payload)
+          ws-sender-client-id (:sender-ws-client-id msg-body)]
       (timbre/info "Received message from SQS:" msg-body)
       (if (and
            (or (= change-type :add) (= change-type :update) (= change-type :delete) (= change-type :move))
@@ -119,6 +120,7 @@
                                      :event (if (= resource-type :entry)
                                               :item/change
                                               :container/change)
+                                     :sender-ws-client-id ws-sender-client-id
                                      :payload ws-payload}))
 
         ;; Org or unknown
