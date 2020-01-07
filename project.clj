@@ -36,7 +36,7 @@
     ;; NB: com.amazonaws/aws-java-sdk-dynamodb is pulled in by amazonica
     ;; NB: joda-time is pulled in by clj-time
     ;; NB: encore pulled in from oc.lib
-    [com.taoensso/faraday "1.10.1" :exclusions [com.amazonaws/aws-java-sdk-dynamodb joda-time com.taoensso/encore]]
+    [com.taoensso/faraday "1.11.0-alpha1" :exclusions [com.amazonaws/aws-java-sdk-dynamodb joda-time com.taoensso/encore]]
     ;; Faraday dependency, not pulled in? https://hc.apache.org/
     [org.apache.httpcomponents/httpclient "4.5.10"]
 
@@ -89,7 +89,7 @@
         ;; Example-based testing https://github.com/marick/lein-midje
         [lein-midje "3.2.2"]
         ;; Linter https://github.com/jonase/eastwood
-        [jonase/eastwood "0.3.6"]
+        [jonase/eastwood "0.3.7"]
         ;; Static code search for non-idiomatic code https://github.com/jonase/kibit
         [lein-kibit "0.1.8" :exclusions [org.clojure/clojure]]
       ]
