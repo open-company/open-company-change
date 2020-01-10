@@ -103,19 +103,19 @@
                        (= change-type :comment-add)
                        (merge ws-base-payload {:inbox-action ?inbox-action
                                                :users (:users msg-body)})
-                       (#{:dismiss :follow :unfollow} change-type)
+                       (#{:unread :dismiss :follow :unfollow} change-type)
                        (merge ws-base-payload {:inbox-action ?inbox-action
-                                               :self (#{:dismiss :follow :unfollow :comment-add} change-type)})
+                                               :self (#{:dismiss :unread :follow :unfollow :comment-add} change-type)})
                        :else
                        ws-base-payload)
           client-id (:client-id ?inbox-action)]
       (timbre/info "Received message from SQS:" msg-body)
       (cond
         (and (= resource-type :entry)
-             (or (= change-type :dismiss) (= change-type :follow) (= change-type :unfollow) (= change-type :comment-add))
+             (or (= change-type :dismiss) (= change-type :unread) (= change-type :follow) (= change-type :unfollow) (= change-type :comment-add))
              ?inbox-action)
         (do
-          (timbre/info "Alerting watcher of entry dismiss/follow/unfollow/comment-ad msg from SQS.")
+          (timbre/info "Alerting watcher of entry dismiss/unread/follow/unfollow/comment-ad msg from SQS.")
           (>!! watcher/watcher-chan {:send true
                                      :watch-id container-id
                                      :event :entry/inbox-action
