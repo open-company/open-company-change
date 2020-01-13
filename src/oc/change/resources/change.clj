@@ -82,7 +82,7 @@
       change/table-name
       [:container_id :s]
       {:range-keydef [:item_id :s]
-       :throughput {:read 1 :write 1}
+       :billing-mode :pay-per-request
        :block? true}))
 
   ;; GSI used for delete via container-id
@@ -91,7 +91,7 @@
       change/table-name
       {:gsindexes {:operation :create
                    :name change/container-id-item-id-gsi-name
-                   :throughput {:read 1 :write 1}
+                   :billing-mode :pay-per-request
                    :hash-keydef [:item_id :s]
                    :range-keydef [:container_id :s]
                    :projection :keys-only}}))

@@ -95,7 +95,7 @@
       seen/table-name
       [:user_id :s]
       {:range-keydef [:container_item_id :s]
-       :throughput {:read 1 :write 1}
+       :billing-mode :pay-per-request
        :block? true}))
   ;; GSI used for delete via item-id
   (aprint
@@ -103,7 +103,7 @@
       seen/table-name
       {:gsindexes {:operation :create
                    :name seen/container-id-item-id-gsi-name
-                   :throughput {:read 1 :write 1}
+                   :billing-mode :pay-per-request
                    :hash-keydef [:item-id :s]
                    :range-keydef [:container_id :s]
                    :projection :keys-only}}))
@@ -119,7 +119,7 @@
       seen/table-name
       {:gsindexes {:operation :create
                    :name seen/container-id-gsi-name
-                   :throughput {:read 1 :write 1}
+                   :billing-mode :pay-per-request
                    :hash-keydef [:container_id :s]
                    :range-keydef [:user_id :s]
                    :projection :keys-only}}))

@@ -117,14 +117,14 @@
       read/table-name
       [:item_id :s]
       {:range-keydef [:user_id :s]
-       :throughput {:read 1 :write 1}
+       :billing-mode :pay-per-request
        :block? true}))
   (aprint
     (far/update-table config/dynamodb-opts
       read/table-name
       {:gsindexes {:operation :create
                    :name read/user-id-gsi-name
-                   :throughput {:read 1 :write 1}
+                   :billing-mode :pay-per-request
                    :hash-keydef [:user_id :s]
                    :range-keydef [:container_id :s]
                    :projection :all}}))
@@ -135,7 +135,7 @@
       read/table-name
       {:gsindexes {:operation :create
                    :name read/container-id-item-id-gsi-name
-                   :throughput {:read 1 :write 1}
+                   :billing-mode :pay-per-request
                    :hash-keydef [:item_id :s]
                    :range-keydef [:container_id :s]
                    :projection :keys-only}}))
@@ -150,7 +150,7 @@
             {:gsindexes
               {:operation :create
                :name read/container-id-gsi-name
-               :throughput {:read 1 :write 1}
+               :billing-mode :pay-per-request
                :hash-keydef [:container_id :s]
                :range-keydef [:user_id :s]
                :projection :keys-only}}))
