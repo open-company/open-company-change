@@ -70,7 +70,7 @@
                             (= "draft" (:status old-item))))
           user-id (-> msg-body :user :user-id)
           container-id  (if draft?
-                          (str c/draft-board-uuid "-" user-id) ;; attach author id
+                          (str c/draft-board-uuid "-" user-id) ; attach author id
                           (or (-> msg-body :board :uuid) ; entry or board
                               (-> msg-body :org :uuid))) ; org
           payload-cont-id (if draft?
@@ -111,18 +111,22 @@
                        ws-base-payload)
           client-id (:client-id ?inbox-action)
           ws-sender-client-id (:sender-ws-client-id msg-body)]
+      
       (timbre/info "Received message from SQS:" msg-body)
       (cond
+        
+        ;; dismiss/follow/unfollow/comment-add of entry inbox action
         (and (= resource-type :entry)
              (or (= change-type :dismiss) (= change-type :unread) (= change-type :follow) (= change-type :unfollow) (= change-type :comment-add))
              ?inbox-action)
         (do
-          (timbre/info "Alerting watcher of entry dismiss/unread/follow/unfollow/comment-ad msg from SQS.")
+          (timbre/info "Alerting watcher of entry dismiss/follow/unfollow/comment-add msg from SQS.")
           (>!! watcher/watcher-chan {:send true
                                      :watch-id container-id
                                      :event :entry/inbox-action
                                      :sender-ws-client-id client-id
                                      :payload ws-payload}))
+        
         ;; Add/update/delete of entry/board
         (and
            (or (= change-type :add) (= change-type :update) (= change-type :delete) (= change-type :move))
@@ -140,7 +144,7 @@
                                                              :new-item new-item
                                                              :old-item old-item}))
 
-          (timbre/info "Alerting watcher of add/update/delete msg from SQS.")
+          (timbre/info "Alerting watcher of entry add/update/delete msg from SQS.")
           (>!! watcher/watcher-chan {:send true
                                      :watch-id container-id
                                      :event (if (= resource-type :entry)
