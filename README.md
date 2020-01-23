@@ -24,7 +24,7 @@ To get started, head to: [Carrot](https://carrot.io/)
 
 ## Overview
 
-The OpenCompany Change Service handles tracking the read and unread status of content resources.
+The OpenCompany Change Service handles propogating events on content resources to other users/sessions to enable real-time updates.
 
 
 ## Local Setup
