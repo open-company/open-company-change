@@ -24,7 +24,7 @@ To get started, head to: [Carrot](https://carrot.io/)
 
 ## Overview
 
-The OpenCompany Change Service handles propogating events on content resources to other users/sessions to enable real-time updates.
+The OpenCompany Change Service handles propogating events on content resources to other users/sessions to enable real-time updates, and provides seen & read tracking.
 
 
 ## Local Setup
