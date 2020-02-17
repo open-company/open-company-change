@@ -1,6 +1,8 @@
 (ns oc.change.api.change
   "Liberator API for change data."
-  (:require [if-let.core :refer (if-let*)]
+  (:require [clojure.core.async :as async :refer (>!!)]
+            [oc.lib.async.watcher :as watcher]
+            [if-let.core :refer (if-let*)]
             [liberator.core :refer (defresource by-method)]
             [compojure.core :as compojure :refer (DELETE GET OPTIONS)]
             [cheshire.core :as json]
