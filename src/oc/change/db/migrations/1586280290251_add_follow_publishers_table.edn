@@ -1,0 +1,33 @@
+(ns oc.change.db.migrations.add-follow-publishers-table
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.change.resources.follow :as follow]
+            [oc.change.config :as config]
+            [oc.change.resources.common :refer (gsi-exists-on-table?)]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; needs to be idempotent
+(defn up [dynamodb-opts]
+  ;; Do great things
+
+  (println
+    (far/ensure-table dynamodb-opts
+      follow/table-name
+      [:user_id :s]
+      {:range-keydef [:org_uuid :s]
+       :billing-mode :pay-per-request
+       :block? true}))
+
+  (print
+   (if (gsi-exists-on-table? dynamodb-opts follow/org-uuid-gsi-name follow/table-name)
+     (format "%s index already exists on %s, skipping" follow/org-uuid-gsi-name follow/table-name)
+     @(far/update-table config/dynamodb-opts
+        follow/table-name
+        {:gsindexes {:operation :create
+                     :name follow/org-uuid-gsi-name
+                     :billing-mode :pay-per-request
+                     :hash-keydef [:org_uuid :s]
+                     :range-keydef [:user_id :s]
+                     :projection :keys-only}})))
+
+  true) ; return true on success

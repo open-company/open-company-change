@@ -10,7 +10,8 @@
             [oc.lib.async.watcher :as watcher]
             [oc.change.resources.seen :as seen]
             [oc.change.resources.change :as change]
-            [oc.change.resources.read :as read]))
+            [oc.change.resources.read :as read]
+            [oc.change.resources.follow :as follow]))
 
 ;; ----- core.async -----
 
@@ -30,7 +31,7 @@
   ;; Delete an entry
   ([:delete :entry container-id item-id _author-id _change-at _new-item _old-item]
   (timbre/info "Persisting delete entry change on:" item-id "for container:" container-id)
-  (change/delete-by-item!  container-id item-id)
+  (change/delete-by-item! container-id item-id)
   (seen/delete-by-item! container-id item-id)
   (read/delete-by-item! container-id item-id))
 
@@ -46,6 +47,21 @@
   (change/delete-by-container! container-id)
   (seen/delete-by-container! container-id)
   (read/delete-by-container! container-id))
+
+  ;; Follow publishers
+  ([:follow :publishers user-id org-uuid publisher-uuids :guard coll?]
+  (timbre/info "Persisting follow for user:" user-id "of org:" org-uuid "publishers:" publisher-uuids)
+  (follow/store! user-id org-uuid publisher-uuids))
+
+  ;; Follow uuid
+  ([:follow :publisher user-id org-uuid publisher-uuid :guard string?]
+  (timbre/info "Persisting follow for user:" user-id "of org:" org-uuid "publisher:" publisher-uuid)
+  (follow/follow! user-id org-uuid publisher-uuid))
+
+  ;; Follow uuid
+  ([:unfollow :publisher user-id org-uuid publisher-uuid :guard string?]
+  (timbre/info "Persisting follow for user:" user-id "of org:" org-uuid "publisher:" publisher-uuid)
+  (follow/unfollow! user-id org-uuid publisher-uuid))
 
   ;; Else
   ([_op _resource _container _item _author _change _new-item _old-item]
@@ -227,6 +243,36 @@
     (timbre/info resource-type change-type "request on:" item-id  "in:" container-id
                                            "by:" author-id "at:" change-at)
     (persist change-type resource-type container-id item-id author-id change-at new-item old-item)))
+
+  ;; Follow publishers
+  ([message :guard :follow-publishers]
+  ; Persist that a container received a new item at a specific time
+  (let [user-id (:user-id message)
+        org-uuid (:org-uuid message)
+        publisher-uuids (:publisher-uuids message)]
+    (timbre/info "Follow request from:" user-id  "on:" org-uuid
+                                           "for:" publisher-uuids)
+    (persist :follow :publishers user-id org-uuid publisher-uuids)))
+
+  ;; Follow publisher
+  ([message :guard :follow-publisher]
+  ; Persist that a container received a new item at a specific time
+  (let [user-id (:user-id message)
+        org-uuid (:org-uuid message)
+        publisher-uuid (:publisher-uuid message)]
+    (timbre/info "Follow request from:" user-id  "on:" org-uuid
+                                           "for:" publisher-uuid)
+    (persist :follow :publisher user-id org-uuid publisher-uuid)))
+
+  ;; Unfollow publisher
+  ([message :guard :unfollow-publisher]
+  ; Persist that a container received a new item at a specific time
+  (let [user-id (:user-id message)
+        org-uuid (:org-uuid message)
+        publisher-uuid (:publisher-uuid message)]
+    (timbre/info "Unfollow request from:" user-id  "on:" org-uuid
+                                           "for:" publisher-uuid)
+    (persist :unfollow :publisher user-id org-uuid publisher-uuid)))
 
   ([message]
   (timbre/warn "Unknown request in persistence channel" message)))

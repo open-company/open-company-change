@@ -173,6 +173,40 @@
     (timbre/info "[websocket] item/who-read-count for:" item-ids)
     (>!! persistence/persistence-chan {:who-read-count true :item-ids item-ids :client-id client-id :user-id user-id})))
 
+;; Follow/unfollow publisher(s)
+
+(defmethod -event-msg-handler
+  :publishers/follow
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-uuid (-> ring-req :params :org-uuid)
+        publisher-uuids (-> ring-req :params :publisher-uuids)]
+    (timbre/info "[websocket] publishers/follow for:" user-id "org:" org-uuid)
+    (>!! persistence/persistence-chan {:follow-publishers true :user-id user-id :client-id client-id :org-uuid org-uuid :publisher-uuids publisher-uuids})))
+
+(defmethod -event-msg-handler
+  :publisher/follow
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-uuid (-> ring-req :params :org-uuid)
+        publisher-uuid (-> ring-req :params :publisher-uuid)]
+    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-uuid)
+    (>!! persistence/persistence-chan {:follow-publisher true :user-id user-id :client-id client-id :org-uuid org-uuid :publisher-uuid publisher-uuid})))
+
+(defmethod -event-msg-handler
+  :publisher/unfollow
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-uuid (-> ring-req :params :org-uuid)
+        publisher-uuid (-> ring-req :params :publisher-uuid)]
+    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-uuid)
+    (>!! persistence/persistence-chan {:unfollow-publisher true :user-id user-id :client-id client-id :org-uuid org-uuid :publisher-uuid publisher-uuid})))
+
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
 (defonce router_ (atom nil))
