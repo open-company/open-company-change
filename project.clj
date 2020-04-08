@@ -144,6 +144,7 @@
                  '[oc.change.resources.seen :as seen]
                  '[oc.change.resources.change :as change]
                  '[oc.change.resources.read :as read]
+                 '[oc.change.resources.follow :as follow]
                  )
       ]
     }]

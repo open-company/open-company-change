@@ -9,24 +9,26 @@
 ;; needs to be idempotent
 (defn up [dynamodb-opts]
   ;; Do great things
+  ;; FIXME: remove temp delete of table
+  (println (far/delete-table dynamodb-opts follow/table-name))
 
   (println
     (far/ensure-table dynamodb-opts
       follow/table-name
       [:user_id :s]
-      {:range-keydef [:org_uuid :s]
+      {:range-keydef [:org_slug :s]
        :billing-mode :pay-per-request
        :block? true}))
 
   (print
-   (if (gsi-exists-on-table? dynamodb-opts follow/org-uuid-gsi-name follow/table-name)
-     (format "%s index already exists on %s, skipping" follow/org-uuid-gsi-name follow/table-name)
+   (if (gsi-exists-on-table? dynamodb-opts follow/org-slug-gsi-name follow/table-name)
+     (format "%s index already exists on %s, skipping" follow/org-slug-gsi-name follow/table-name)
      @(far/update-table config/dynamodb-opts
         follow/table-name
         {:gsindexes {:operation :create
-                     :name follow/org-uuid-gsi-name
+                     :name follow/org-slug-gsi-name
                      :billing-mode :pay-per-request
-                     :hash-keydef [:org_uuid :s]
+                     :hash-keydef [:org_slug :s]
                      :range-keydef [:user_id :s]
                      :projection :keys-only}})))
 
