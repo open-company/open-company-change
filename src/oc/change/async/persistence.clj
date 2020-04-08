@@ -49,19 +49,19 @@
   (read/delete-by-container! container-id))
 
   ;; Follow publishers
-  ([:follow :publishers user-id org-uuid publisher-uuids :guard coll?]
-  (timbre/info "Persisting follow for user:" user-id "of org:" org-uuid "publishers:" publisher-uuids)
-  (follow/store! user-id org-uuid publisher-uuids))
+  ([:follow :publishers user-id org-slug publisher-uuids :guard coll?]
+  (timbre/info "Persisting follow for user:" user-id "of org:" org-slug "publishers:" publisher-uuids)
+  (follow/store! user-id org-slug publisher-uuids))
 
   ;; Follow uuid
-  ([:follow :publisher user-id org-uuid publisher-uuid :guard string?]
-  (timbre/info "Persisting follow for user:" user-id "of org:" org-uuid "publisher:" publisher-uuid)
-  (follow/follow! user-id org-uuid publisher-uuid))
+  ([:follow :publisher user-id org-slug publisher-uuid :guard string?]
+  (timbre/info "Persisting follow for user:" user-id "of org:" org-slug "publisher:" publisher-uuid)
+  (follow/follow! user-id org-slug publisher-uuid))
 
   ;; Follow uuid
-  ([:unfollow :publisher user-id org-uuid publisher-uuid :guard string?]
-  (timbre/info "Persisting follow for user:" user-id "of org:" org-uuid "publisher:" publisher-uuid)
-  (follow/unfollow! user-id org-uuid publisher-uuid))
+  ([:unfollow :publisher user-id org-slug publisher-uuid :guard string?]
+  (timbre/info "Persisting follow for user:" user-id "of org:" org-slug "publisher:" publisher-uuid)
+  (follow/unfollow! user-id org-slug publisher-uuid))
 
   ;; Else
   ([_op _resource _container _item _author _change _new-item _old-item]
@@ -244,35 +244,51 @@
                                            "by:" author-id "at:" change-at)
     (persist change-type resource-type container-id item-id author-id change-at new-item old-item)))
 
+  ;; List publishers
+  ([message :guard :publishers-list]
+  ; Persist that a container received a new item at a specific time
+  (let [user-id (:user-id message)
+        org-slug (:org-slug message)
+        client-id (:client-id message)
+        publishers (follow/retrieve user-id org-slug)]
+    (timbre/info "Publishers list request from:" user-id  "on:" org-slug)
+    (>!! watcher/sender-chan {:event [:publishers/list publishers]
+                              :client-id client-id})))
+
   ;; Follow publishers
   ([message :guard :follow-publishers]
   ; Persist that a container received a new item at a specific time
   (let [user-id (:user-id message)
-        org-uuid (:org-uuid message)
+        org-slug (:org-slug message)
         publisher-uuids (:publisher-uuids message)]
-    (timbre/info "Follow request from:" user-id  "on:" org-uuid
+    (timbre/info "Follow request from:" user-id  "on:" org-slug
                                            "for:" publisher-uuids)
-    (persist :follow :publishers user-id org-uuid publisher-uuids)))
+    (persist :follow :publishers user-id org-slug publisher-uuids)
+    (>!! watcher/watcher-chan {:send true
+                               :watch-id (str org-slug "-" user-id)
+                               :event :publishers/list
+                               :payload {:org-slug org-slug
+                                         :publisher-uuids publisher-uuids}})))
 
   ;; Follow publisher
   ([message :guard :follow-publisher]
   ; Persist that a container received a new item at a specific time
   (let [user-id (:user-id message)
-        org-uuid (:org-uuid message)
+        org-slug (:org-slug message)
         publisher-uuid (:publisher-uuid message)]
-    (timbre/info "Follow request from:" user-id  "on:" org-uuid
+    (timbre/info "Follow request from:" user-id  "on:" org-slug
                                            "for:" publisher-uuid)
-    (persist :follow :publisher user-id org-uuid publisher-uuid)))
+    (persist :follow :publisher user-id org-slug publisher-uuid)))
 
   ;; Unfollow publisher
   ([message :guard :unfollow-publisher]
   ; Persist that a container received a new item at a specific time
   (let [user-id (:user-id message)
-        org-uuid (:org-uuid message)
+        org-slug (:org-slug message)
         publisher-uuid (:publisher-uuid message)]
-    (timbre/info "Unfollow request from:" user-id  "on:" org-uuid
+    (timbre/info "Unfollow request from:" user-id  "on:" org-slug
                                            "for:" publisher-uuid)
-    (persist :unfollow :publisher user-id org-uuid publisher-uuid)))
+    (persist :unfollow :publisher user-id org-slug publisher-uuid)))
 
   ([message]
   (timbre/warn "Unknown request in persistence channel" message)))
@@ -285,7 +301,7 @@
   (async/go (while @persistence-go
     (timbre/debug "Persistence waiting...")
     (let [message (<! persistence-chan)]
-      (timbre/debug "Processing message on persistence channel...")
+      (timbre/debug "Processing message on persistence channel..." message)
       (if (:stop message)
         (do (reset! persistence-go false) (timbre/info "Persistence stopped."))
         (async/thread

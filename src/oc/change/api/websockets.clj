@@ -109,6 +109,20 @@
                                  :client-id client-id}))))
 
 (defmethod -event-msg-handler
+  :user/watch
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        user-ids (:user-ids ?data)
+        org-slug (:org-slug ?data)]
+    (timbre/info "[websocket] user/watch by:" user-id "/" client-id "on" org-slug)
+    (doseq [user-id user-ids]
+      (>!! watcher/watcher-chan {:watch true
+                                 :watch-id (str org-slug "-" user-id)
+                                 :client-id client-id}))))
+
+(defmethod -event-msg-handler
   :container/seen
 
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
@@ -176,14 +190,23 @@
 ;; Follow/unfollow publisher(s)
 
 (defmethod -event-msg-handler
+  :publishers/list
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-slug (:org-slug ?data)]
+    (timbre/info "[websocket] publishers/list for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:publishers-list true :user-id user-id :client-id client-id :org-slug org-slug})))
+
+(defmethod -event-msg-handler
   :publishers/follow
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-uuid (-> ring-req :params :org-uuid)
-        publisher-uuids (-> ring-req :params :publisher-uuids)]
-    (timbre/info "[websocket] publishers/follow for:" user-id "org:" org-uuid)
-    (>!! persistence/persistence-chan {:follow-publishers true :user-id user-id :client-id client-id :org-uuid org-uuid :publisher-uuids publisher-uuids})))
+        org-slug (:org-slug ?data)
+        publisher-uuids (:publisher-uuids ?data)]
+    (timbre/info "[websocket] publishers/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:follow-publishers true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuids publisher-uuids})))
 
 (defmethod -event-msg-handler
   :publisher/follow
@@ -191,10 +214,10 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-uuid (-> ring-req :params :org-uuid)
-        publisher-uuid (-> ring-req :params :publisher-uuid)]
-    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-uuid)
-    (>!! persistence/persistence-chan {:follow-publisher true :user-id user-id :client-id client-id :org-uuid org-uuid :publisher-uuid publisher-uuid})))
+        org-slug (:org-slug ?data)
+        publisher-uuid (:publisher-uuid ?data)]
+    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:follow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
 
 (defmethod -event-msg-handler
   :publisher/unfollow
@@ -202,10 +225,10 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-uuid (-> ring-req :params :org-uuid)
-        publisher-uuid (-> ring-req :params :publisher-uuid)]
-    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-uuid)
-    (>!! persistence/persistence-chan {:unfollow-publisher true :user-id user-id :client-id client-id :org-uuid org-uuid :publisher-uuid publisher-uuid})))
+        org-slug (:org-slug ?data)
+        publisher-uuid (:publisher-uuid ?data)]
+    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:unfollow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 

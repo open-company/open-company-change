@@ -61,6 +61,7 @@
   (doseq [body (sqs/read-message-body (:body msg))]
     (let [msg-body (json/parse-string (:Message body) true)
           notification-change-type (keyword (:notification-type msg-body))
+          org (:org msg-body)
           notification-content (:content msg-body)
           new-item (-> msg-body :content :new)
           old-item (-> msg-body :content :old)
@@ -105,8 +106,7 @@
                        (merge ws-base-payload {:inbox-action ?inbox-action
                                                :users (:users msg-body)})
                        (#{:unread :dismiss :follow :unfollow} change-type)
-                       (merge ws-base-payload {:inbox-action ?inbox-action
-                                               :self (#{:dismiss :unread :follow :unfollow :comment-add} change-type)})
+                       (merge ws-base-payload {:inbox-action ?inbox-action})
                        :else
                        ws-base-payload)
           client-id (:client-id ?inbox-action)
@@ -122,7 +122,9 @@
         (do
           (timbre/info "Alerting watcher of entry dismiss/follow/unfollow/comment-add msg from SQS.")
           (>!! watcher/watcher-chan {:send true
-                                     :watch-id container-id
+                                     :watch-id (if ?inbox-action
+                                                 (str (:slug org) "-" user-id)
+                                                 container-id)
                                      :event :entry/inbox-action
                                      :sender-ws-client-id client-id
                                      :payload ws-payload}))
