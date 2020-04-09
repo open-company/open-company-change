@@ -1,7 +1,7 @@
 (ns oc.change.db.migrations.add-follow-publishers-table
   (:require [taoensso.faraday :as far]
             [oc.lib.db.migrations :as m]
-            [oc.change.resources.follow :as follow]
+            [oc.lib.change.resources.follow :as follow]
             [oc.change.config :as config]
             [oc.change.resources.common :refer (gsi-exists-on-table?)]))
 
@@ -13,7 +13,7 @@
   ;; Create follow table if not already present
   (println
     (far/ensure-table config/dynamodb-opts
-      (follow/table-name)
+      (follow/table-name config/dynamodb-opts)
       [:user_id :s]
       {:range-keydef [:org_slug :s]
        :billing-mode :pay-per-request
@@ -21,12 +21,12 @@
 
   ;; Create org-slug gsi index on follow table if not already present
   (print
-   (if (gsi-exists-on-table? change/dynamodb-opts follow/org-slug-gsi-name (follow/table-name))
-     (format "%s index already exists on %s, skipping" follow/org-slug-gsi-name (follow/table-name))
+   (if (gsi-exists-on-table? config/dynamodb-opts (follow/org-slug-gsi-name config/dynamodb-opts) (follow/table-name config/dynamodb-opts))
+     (format "%s index already exists on %s, skipping" (follow/org-slug-gsi-name config/dynamodb-opts) (follow/table-name config/dynamodb-opts))
      @(far/update-table config/dynamodb-opts
-        (follow/table-name)
+        (follow/table-name config/dynamodb-opts)
         {:gsindexes {:operation :create
-                     :name follow/org-slug-gsi-name
+                     :name (follow/org-slug-gsi-name config/dynamodb-opts)
                      :billing-mode :pay-per-request
                      :hash-keydef [:org_slug :s]
                      :range-keydef [:user_id :s]
@@ -35,7 +35,7 @@
   ;; Create follower table if not already present
   (println
     (far/ensure-table config/dynamodb-opts
-      (follow/follower-table-name)
+      (follow/follower-table-name config/dynamodb-opts)
       [:publisher_uuid :s]
       {:range-keydef [:org_slug :s]
        :billing-mode :pay-per-request
