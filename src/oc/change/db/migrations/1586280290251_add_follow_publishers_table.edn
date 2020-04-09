@@ -21,7 +21,7 @@
 
   ;; Create org-slug gsi index on follow table if not already present
   (print
-   (if (gsi-exists-on-table? dynamodb-opts follow/org-slug-gsi-name (follow/table-name))
+   (if (gsi-exists-on-table? change/dynamodb-opts follow/org-slug-gsi-name (follow/table-name))
      (format "%s index already exists on %s, skipping" follow/org-slug-gsi-name (follow/table-name))
      @(far/update-table config/dynamodb-opts
         (follow/table-name)
