@@ -36,6 +36,7 @@
     :access-key (env :aws-access-key-id)
     :secret-key (env :aws-secret-access-key)
     :endpoint dynamodb-end-point
+    :table-prefix dynamodb-table-prefix
   })
 
 ;; ----- HTTP server -----
