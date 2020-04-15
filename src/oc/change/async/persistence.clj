@@ -278,11 +278,13 @@
         publisher-uuids (:publisher-uuids message)]
     (timbre/info "Follow publishers request from:" user-id  "on:" org-slug "for:" publisher-uuids)
     (persist :follow :publishers user-id org-slug publisher-uuids)
-    (>!! watcher/watcher-chan {:send true
-                               :watch-id (str org-slug "-" user-id)
-                               :event :follow/list
-                               :payload {:org-slug org-slug
-                                         :publisher-uuids publisher-uuids}})))
+    (let [follow-item (follow/retrieve user-id org-slug)]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id (str org-slug "-" user-id)
+                                 :event :follow/list
+                                 :payload {:org-slug org-slug
+                                           :board-uuids (:board-uuid follow-item)
+                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
 
   ;; Follow boards
   ([message :guard :follow-boards]
@@ -292,11 +294,13 @@
         board-uuids (:board-uuids message)]
     (timbre/info "Follow boards request from:" user-id  "on:" org-slug "for:" board-uuids)
     (persist :follow :boards user-id org-slug board-uuids)
-    (>!! watcher/watcher-chan {:send true
-                               :watch-id (str org-slug "-" user-id)
-                               :event :follow/list
-                               :payload {:org-slug org-slug
-                                         :board-uuids board-uuids}})))
+    (let [follow-item (follow/retrieve user-id org-slug)]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id (str org-slug "-" user-id)
+                                 :event :follow/list
+                                 :payload {:org-slug org-slug
+                                           :board-uuids (:board-uuid follow-item)
+                                           :publisher-uuids (:publisher-uuids follow-item)}})))
 
   ;; Follow publisher
   ([message :guard :follow-publisher]
