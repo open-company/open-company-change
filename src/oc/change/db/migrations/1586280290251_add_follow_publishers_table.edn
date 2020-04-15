@@ -32,11 +32,20 @@
                      :range-keydef [:user_id :s]
                      :projection :keys-only}})))
 
-  ;; Create follower table if not already present
+  ;; Create publisher_follower table if not already present
   (println
     (far/ensure-table config/dynamodb-opts
-      (follow/follower-table-name config/dynamodb-opts)
+      (follow/publisher-follower-table-name config/dynamodb-opts)
       [:publisher_uuid :s]
+      {:range-keydef [:org_slug :s]
+       :billing-mode :pay-per-request
+       :block? true}))
+
+  ;; Create publisher_follower table if not already present
+  (println
+    (far/ensure-table config/dynamodb-opts
+      (follow/board-follower-table-name config/dynamodb-opts)
+      [:board_uuid :s]
       {:range-keydef [:org_slug :s]
        :billing-mode :pay-per-request
        :block? true}))

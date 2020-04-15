@@ -187,16 +187,18 @@
     (timbre/info "[websocket] item/who-read-count for:" item-ids)
     (>!! persistence/persistence-chan {:who-read-count true :item-ids item-ids :client-id client-id :user-id user-id})))
 
-;; Follow/unfollow publisher(s)
+;; Follow list
 
 (defmethod -event-msg-handler
-  :publishers/list
+  :follow/list
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
         org-slug (:org-slug ?data)]
-    (timbre/info "[websocket] publishers/list for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:publishers-list true :user-id user-id :client-id client-id :org-slug org-slug})))
+    (timbre/info "[websocket] follow/list for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:follow-list true :user-id user-id :client-id client-id :org-slug org-slug})))
+
+;; Follow/unfollow publisher(s)
 
 (defmethod -event-msg-handler
   :publishers/follow
@@ -207,6 +209,62 @@
         publisher-uuids (:publisher-uuids ?data)]
     (timbre/info "[websocket] publishers/follow for:" user-id "org:" org-slug)
     (>!! persistence/persistence-chan {:follow-publishers true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuids publisher-uuids})))
+
+(defmethod -event-msg-handler
+  :publisher/follow
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-slug (:org-slug ?data)
+        publisher-uuid (:publisher-uuid ?data)]
+    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:follow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
+
+(defmethod -event-msg-handler
+  :publisher/unfollow
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-slug (:org-slug ?data)
+        publisher-uuid (:publisher-uuid ?data)]
+    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:unfollow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
+
+;; Follow/unfollow board(s)
+
+(defmethod -event-msg-handler
+  :boards/follow
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-slug (:org-slug ?data)
+        board-uuids (:board-uuids ?data)]
+    (timbre/info "[websocket] boards/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:follow-boards true :user-id user-id :client-id client-id :org-slug org-slug :board-uuids board-uuids})))
+
+(defmethod -event-msg-handler
+  :board/follow
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-slug (:org-slug ?data)
+        board-uuid (:board-uuid ?data)]
+    (timbre/info "[websocket] board/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:follow-board true :user-id user-id :client-id client-id :org-slug org-slug :board-uuid board-uuid})))
+
+(defmethod -event-msg-handler
+  :board/unfollow
+
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-slug (:org-slug ?data)
+        board-uuid (:board-uuid ?data)]
+    (timbre/info "[websocket] board/follow for:" user-id "org:" org-slug)
+    (>!! persistence/persistence-chan {:unfollow-board true :user-id user-id :client-id client-id :org-slug org-slug :board-uuid board-uuid})))
 
 (defmethod -event-msg-handler
   :publisher/follow
