@@ -299,7 +299,7 @@
                                  :watch-id (str org-slug "-" user-id)
                                  :event :follow/list
                                  :payload {:org-slug org-slug
-                                           :board-uuids (:board-uuid follow-item)
+                                           :board-uuids (:board-uuids follow-item)
                                            :publisher-uuids (:publisher-uuids follow-item)}}))))
 
   ;; Follow publisher
