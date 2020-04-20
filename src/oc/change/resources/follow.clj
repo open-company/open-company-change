@@ -14,14 +14,24 @@
   (lib-follow/publisher-follower-table-name c/dynamodb-opts))
 
 (schema/defn ^:always-validate retrieve
-  :- {:user-id lib-schema/UniqueID :org-slug lib-follow/Slug :publisher-uuids [lib-schema/UniqueID] :board-uuids [lib-schema/UniqueID]}
+  :- {:user-id lib-schema/UniqueID :org-slug lib-follow/Slug :publisher-uuids (schema/maybe [lib-schema/UniqueID]) :board-uuids (schema/maybe [lib-schema/UniqueID])}
   [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug]
   (lib-follow/retrieve c/dynamodb-opts user-id org-slug))
 
 (schema/defn ^:always-validate retrieve-all
-  :- [{:user-id lib-schema/UniqueID :org-slug lib-follow/Slug :publisher-uuids [lib-schema/UniqueID] :board-uuids [lib-schema/UniqueID]}]
+  :- [{:user-id lib-schema/UniqueID :org-slug lib-follow/Slug :publisher-uuids (schema/maybe [lib-schema/UniqueID]) :board-uuids (schema/maybe [lib-schema/UniqueID])}]
   [org-slug :- lib-follow/Slug]
   (lib-follow/retrieve-all c/dynamodb-opts org-slug))
+
+(schema/defn ^:always-validate retrieve-publisher-followers
+  :- {:publisher-uuid lib-schema/UniqueID :org-slug lib-follow/Slug :follower-uuids [lib-schema/UniqueID]}
+  [org-slug :- lib-follow/Slug publisher-uuid :- lib-schema/UniqueID]
+  (lib-follow/retrieve-publisher-followers c/dynamodb-opts org-slug publisher-uuid))
+
+(schema/defn ^:always-validate retrieve-board-followers
+  :- {:board-uuid lib-schema/UniqueID :org-slug lib-follow/Slug :follower-uuids [lib-schema/UniqueID]}
+  [org-slug :- lib-follow/Slug board-uuid :- lib-schema/UniqueID]
+  (lib-follow/retrieve-board-followers c/dynamodb-opts org-slug board-uuid))
 
 (schema/defn ^:always-validate store!
   [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug publisher-uuids :- [lib-schema/UniqueID] board-uuids :- [lib-schema/UniqueID]]
