@@ -310,7 +310,14 @@
         publisher-uuid (:publisher-uuid message)]
     (timbre/info "Follow request from:" user-id  "on:" org-slug
                                            "for:" publisher-uuid)
-    (persist :follow :publisher user-id org-slug publisher-uuid)))
+    (persist :follow :publisher user-id org-slug publisher-uuid)
+    (let [follow-item (follow/retrieve user-id org-slug)]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id (str org-slug "-" user-id)
+                                 :event :follow/list
+                                 :payload {:org-slug org-slug
+                                           :board-uuids (:board-uuids follow-item)
+                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
 
   ;; Follow board
   ([message :guard :follow-board]
@@ -319,7 +326,14 @@
         org-slug (:org-slug message)
         board-uuid (:board-uuid message)]
     (timbre/info "Follow board request from:" user-id  "on:" org-slug "for:" board-uuid)
-    (persist :follow :board user-id org-slug board-uuid)))
+    (persist :follow :board user-id org-slug board-uuid)
+    (let [follow-item (follow/retrieve user-id org-slug)]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id (str org-slug "-" user-id)
+                                 :event :follow/list
+                                 :payload {:org-slug org-slug
+                                           :board-uuids (:board-uuids follow-item)
+                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
 
   ;; Unfollow publisher
   ([message :guard :unfollow-publisher]
@@ -328,7 +342,14 @@
         org-slug (:org-slug message)
         publisher-uuid (:publisher-uuid message)]
     (timbre/info "Unfollow request from:" user-id  "on:" org-slug "for:" publisher-uuid)
-    (persist :unfollow :publisher user-id org-slug publisher-uuid)))
+    (persist :unfollow :publisher user-id org-slug publisher-uuid)
+    (let [follow-item (follow/retrieve user-id org-slug)]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id (str org-slug "-" user-id)
+                                 :event :follow/list
+                                 :payload {:org-slug org-slug
+                                           :board-uuids (:board-uuids follow-item)
+                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
 
   ;; Unfollow board
   ([message :guard :unfollow-board]
@@ -337,7 +358,14 @@
         org-slug (:org-slug message)
         board-uuid (:board-uuid message)]
     (timbre/info "Unfollow board request from:" user-id  "on:" org-slug "for:" board-uuid)
-    (persist :unfollow :board user-id org-slug board-uuid)))
+    (persist :unfollow :board user-id org-slug board-uuid)
+    (let [follow-item (follow/retrieve user-id org-slug)]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id (str org-slug "-" user-id)
+                                 :event :follow/list
+                                 :payload {:org-slug org-slug
+                                           :board-uuids (:board-uuids follow-item)
+                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
 
   ([message]
   (timbre/warn "Unknown request in persistence channel" message)))
