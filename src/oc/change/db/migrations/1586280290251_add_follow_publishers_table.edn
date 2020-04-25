@@ -41,7 +41,23 @@
        :billing-mode :pay-per-request
        :block? true}))
 
-  ;; Create publisher_follower table if not already present
+  ;; Create org-slug gsi index on publishers follower table if not already present
+  (print
+   (if (gsi-exists-on-table? config/dynamodb-opts
+        (follow/org-slug-publisher-followers-gsi-name config/dynamodb-opts)
+        (follow/publisher-follower-table-name config/dynamodb-opts))
+     (format "%s index already exists on %s, skipping" (follow/org-slug-publisher-followers-gsi-name config/dynamodb-opts)
+                                                       (follow/publisher-follower-table-name config/dynamodb-opts))
+     @(far/update-table config/dynamodb-opts
+        (follow/publisher-follower-table-name config/dynamodb-opts)
+        {:gsindexes {:operation :create
+                     :name (follow/org-slug-publisher-followers-gsi-name config/dynamodb-opts)
+                     :billing-mode :pay-per-request
+                     :hash-keydef [:org_slug :s]
+                     :range-keydef [:publisher_uuid :s]
+                     :projection :all}})))
+
+  ;; Create board_follower table if not already present
   (println
     (far/ensure-table config/dynamodb-opts
       (follow/board-follower-table-name config/dynamodb-opts)
@@ -49,5 +65,21 @@
       {:range-keydef [:org_slug :s]
        :billing-mode :pay-per-request
        :block? true}))
+
+  ;; Create org-slug gsi index on boards follower table if not already present
+  (print
+   (if (gsi-exists-on-table? config/dynamodb-opts
+        (follow/org-slug-board-followers-gsi-name config/dynamodb-opts)
+        (follow/board-follower-table-name config/dynamodb-opts))
+     (format "%s index already exists on %s, skipping" (follow/org-slug-board-followers-gsi-name config/dynamodb-opts)
+                                                       (follow/board-follower-table-name config/dynamodb-opts))
+     @(far/update-table config/dynamodb-opts
+        (follow/board-follower-table-name config/dynamodb-opts)
+        {:gsindexes {:operation :create
+                     :name (follow/org-slug-board-followers-gsi-name config/dynamodb-opts)
+                     :billing-mode :pay-per-request
+                     :hash-keydef [:org_slug :s]
+                     :range-keydef [:board_uuid :s]
+                     :projection :all}})))
 
   true) ; return true on success

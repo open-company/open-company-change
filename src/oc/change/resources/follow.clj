@@ -33,6 +33,16 @@
   [org-slug :- lib-follow/Slug board-uuid :- lib-schema/UniqueID]
   (lib-follow/retrieve-board-followers c/dynamodb-opts org-slug board-uuid))
 
+(schema/defn ^:always-validate retrieve-all-publisher-followers
+  :- [{:org-slug lib-follow/Slug :follower-uuids [lib-schema/UniqueID] :publisher-uuid lib-schema/UniqueID :resource-type lib-follow/ResourceType}]
+  [org-slug :- lib-follow/Slug]
+  (lib-follow/retrieve-all-publisher-followers c/dynamodb-opts org-slug))
+
+(schema/defn ^:always-validate retrieve-all-board-followers
+  :- [{:org-slug lib-follow/Slug :follower-uuids [lib-schema/UniqueID] :board-uuid lib-schema/UniqueID :resource-type lib-follow/ResourceType}]
+  [org-slug :- lib-follow/Slug]
+  (lib-follow/retrieve-all-board-followers c/dynamodb-opts org-slug))
+
 (schema/defn ^:always-validate store!
   [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug publisher-uuids :- [lib-schema/UniqueID] board-uuids :- [lib-schema/UniqueID]]
   (lib-follow/store! c/dynamodb-opts user-id org-slug publisher-uuids board-uuids))

@@ -270,6 +270,23 @@
     (>!! watcher/sender-chan {:event [:follow/list publishers]
                               :client-id client-id})))
 
+  ;; Followers count list
+  ([message :guard :followers-count]
+  ; Persist that a container received a new item at a specific time
+  (let [user-id (:user-id message)
+        org-slug (:org-slug message)
+        client-id (:client-id message)
+        publisher-followers (follow/retrieve-all-publisher-followers org-slug)
+        board-followers (follow/retrieve-all-board-followers org-slug)
+        followers (mapv #(-> %
+                          (assoc :resource-uuid (or (:publisher-uuid %) (:board-uuid %)))
+                          (assoc :count (-> % :follower-uuids count))
+                          (dissoc :publisher-uuid :board-uuid :follower-uuids))
+                   (concat publisher-followers board-followers))]
+    (timbre/info "Followers count request from:" user-id  "on:" org-slug)
+    (>!! watcher/sender-chan {:event [:followers/count followers]
+                              :client-id client-id})))
+
   ;; Follow publishers
   ([message :guard :follow-publishers]
   ; Persist that a container received a new item at a specific time

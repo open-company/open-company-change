@@ -198,6 +198,17 @@
     (timbre/info "[websocket] follow/list for:" user-id "org:" org-slug)
     (>!! persistence/persistence-chan {:follow-list true :user-id user-id :client-id client-id :org-slug org-slug})))
 
+;; Followers count
+
+(defmethod -event-msg-handler
+  :followers/count
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [user-id (-> ring-req :params :user-id)
+        client-id (-> ring-req :params :client-id)
+        org-slug (:org-slug ?data)]
+    (timbre/info "[websocket] followers/count from:" user-id "for org:" org-slug)
+    (>!! persistence/persistence-chan {:followers-count true :user-id user-id :client-id client-id :org-slug org-slug})))
+
 ;; Follow/unfollow publisher(s)
 
 (defmethod -event-msg-handler
