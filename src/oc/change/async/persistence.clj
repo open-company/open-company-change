@@ -70,12 +70,12 @@
 
   ;; Unfollow publisher
   ([:unfollow :publisher user-id org-slug publisher-uuid :guard string?]
-  (timbre/info "Persisting follow for user:" user-id "of org:" org-slug "publisher:" publisher-uuid)
+  (timbre/info "Persisting unfollow for user:" user-id "of org:" org-slug "publisher:" publisher-uuid)
   (follow/unfollow-publisher! user-id org-slug publisher-uuid))
 
   ;; Follow board
   ([:unfollow :board user-id org-slug board-uuid :guard string?]
-  (timbre/info "Persisting follow for user:" user-id "of org:" org-slug "board:" board-uuid)
+  (timbre/info "Persisting unfollow for user:" user-id "of org:" org-slug "board:" board-uuid)
   (follow/unfollow-board! user-id org-slug board-uuid))
 
   ;; Else
