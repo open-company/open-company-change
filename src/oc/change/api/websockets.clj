@@ -246,14 +246,14 @@
 ;; Follow/unfollow board(s)
 
 (defmethod -event-msg-handler
-  :boards/follow
+  :boards/unfollow
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
         org-slug (:org-slug ?data)
         board-uuids (:board-uuids ?data)]
     (timbre/info "[websocket] boards/follow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:follow-boards true :user-id user-id :client-id client-id :org-slug org-slug :board-uuids board-uuids})))
+    (>!! persistence/persistence-chan {:unfollow-boards true :user-id user-id :client-id client-id :org-slug org-slug :board-uuids board-uuids})))
 
 (defmethod -event-msg-handler
   :board/follow
@@ -276,28 +276,6 @@
         board-uuid (:board-uuid ?data)]
     (timbre/info "[websocket] board/follow for:" user-id "org:" org-slug)
     (>!! persistence/persistence-chan {:unfollow-board true :user-id user-id :client-id client-id :org-slug org-slug :board-uuid board-uuid})))
-
-(defmethod -event-msg-handler
-  :publisher/follow
-
-  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [user-id (-> ring-req :params :user-id)
-        client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
-        publisher-uuid (:publisher-uuid ?data)]
-    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:follow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
-
-(defmethod -event-msg-handler
-  :publisher/unfollow
-
-  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [user-id (-> ring-req :params :user-id)
-        client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
-        publisher-uuid (:publisher-uuid ?data)]
-    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:unfollow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 

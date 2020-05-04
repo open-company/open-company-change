@@ -53,8 +53,8 @@
   (timbre/info "Persisting follow publishers for user:" user-id "of org:" org-slug "publishers:" publisher-uuids)
   (follow/store-publishers! user-id org-slug publisher-uuids))
 
-  ;; Follow boards
-  ([:follow :boards user-id org-slug board-uuids :guard coll?]
+  ;; Unfollow boards
+  ([:unfollow :boards user-id org-slug board-uuids :guard coll?]
   (timbre/info "Persisting follow boards for user:" user-id "of org:" org-slug "boards:" board-uuids)
   (follow/store-boards! user-id org-slug board-uuids))
 
@@ -265,9 +265,9 @@
   (let [user-id (:user-id message)
         org-slug (:org-slug message)
         client-id (:client-id message)
-        publishers (follow/retrieve user-id org-slug)]
+        following-data (follow/retrieve user-id org-slug)]
     (timbre/info "Follow list request from:" user-id  "on:" org-slug)
-    (>!! watcher/sender-chan {:event [:follow/list publishers]
+    (>!! watcher/sender-chan {:event [:follow/list following-data]
                               :client-id client-id})))
 
   ;; Followers count list
@@ -277,19 +277,19 @@
         org-slug (:org-slug message)
         client-id (:client-id message)
         publisher-followers (follow/retrieve-all-publisher-followers org-slug)
-        board-followers (follow/retrieve-all-board-followers org-slug)
+        board-unfollowers (follow/retrieve-all-board-unfollowers org-slug)
         followers (mapv #(-> %
                           (assoc :resource-uuid (or (:publisher-uuid %) (:board-uuid %)))
-                          (assoc :count (-> % :follower-uuids count))
-                          (dissoc :publisher-uuid :board-uuid :follower-uuids))
-                   (concat publisher-followers board-followers))]
+                          (assoc :count (or (-> % :unfollower-uuids count) (-> % :follower-uuids count)))
+                          (dissoc :publisher-uuid :board-uuid :follower-uuids :unfollower-uuids))
+                   (concat publisher-followers board-unfollowers))]
     (timbre/info "Followers count request from:" user-id  "on:" org-slug)
     (>!! watcher/sender-chan {:event [:followers/count followers]
                               :client-id client-id})))
 
   ;; Follow publishers
   ([message :guard :follow-publishers]
-  ; Persist that a container received a new item at a specific time
+  ; Persist publishers followed by a certain user, respond with the complete follow list
   (let [user-id (:user-id message)
         org-slug (:org-slug message)
         publisher-uuids (:publisher-uuids message)]
@@ -300,24 +300,24 @@
                                  :watch-id (str org-slug "-" user-id)
                                  :event :follow/list
                                  :payload {:org-slug org-slug
-                                           :board-uuids (:board-uuids follow-item)
-                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
+                                           :unfollow-board-uuids (:unfollow-board-uuids follow-item)
+                                           :follow-publisher-uuids (:follow-publisher-uuids follow-item)}}))))
 
   ;; Follow boards
-  ([message :guard :follow-boards]
-  ; Persist that a container received a new item at a specific time
+  ([message :guard :unfollow-boards]
+  ; Persist boards followed by a certain user, respond with the complete follow list
   (let [user-id (:user-id message)
         org-slug (:org-slug message)
         board-uuids (:board-uuids message)]
     (timbre/info "Follow boards request from:" user-id  "on:" org-slug "for:" board-uuids)
-    (persist :follow :boards user-id org-slug board-uuids)
+    (persist :unfollow :boards user-id org-slug board-uuids)
     (let [follow-item (follow/retrieve user-id org-slug)]
       (>!! watcher/watcher-chan {:send true
                                  :watch-id (str org-slug "-" user-id)
                                  :event :follow/list
                                  :payload {:org-slug org-slug
-                                           :board-uuids (:board-uuids follow-item)
-                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
+                                           :unfollow-board-uuids (:unfollow-board-uuids follow-item)
+                                           :follow-publisher-uuids (:follow-publisher-uuids follow-item)}}))))
 
   ;; Follow publisher
   ([message :guard :follow-publisher]
@@ -333,8 +333,8 @@
                                  :watch-id (str org-slug "-" user-id)
                                  :event :follow/list
                                  :payload {:org-slug org-slug
-                                           :board-uuids (:board-uuids follow-item)
-                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
+                                           :unfollow-board-uuids (:unfollow-board-uuids follow-item)
+                                           :follow-publisher-uuids (:follow-publisher-uuids follow-item)}}))))
 
   ;; Follow board
   ([message :guard :follow-board]
@@ -349,8 +349,8 @@
                                  :watch-id (str org-slug "-" user-id)
                                  :event :follow/list
                                  :payload {:org-slug org-slug
-                                           :board-uuids (:board-uuids follow-item)
-                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
+                                           :unfollow-board-uuids (:unfollow-board-uuids follow-item)
+                                           :follow-publisher-uuids (:follow-publisher-uuids follow-item)}}))))
 
   ;; Unfollow publisher
   ([message :guard :unfollow-publisher]
@@ -365,8 +365,8 @@
                                  :watch-id (str org-slug "-" user-id)
                                  :event :follow/list
                                  :payload {:org-slug org-slug
-                                           :board-uuids (:board-uuids follow-item)
-                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
+                                           :unfollow-board-uuids (:unfollow-board-uuids follow-item)
+                                           :follow-publisher-uuids (:follow-publisher-uuids follow-item)}}))))
 
   ;; Unfollow board
   ([message :guard :unfollow-board]
@@ -381,8 +381,8 @@
                                  :watch-id (str org-slug "-" user-id)
                                  :event :follow/list
                                  :payload {:org-slug org-slug
-                                           :board-uuids (:board-uuids follow-item)
-                                           :publisher-uuids (:publisher-uuids follow-item)}}))))
+                                           :unfollow-board-uuids (:unfollow-board-uuids follow-item)
+                                           :follow-publisher-uuids (:follow-publisher-uuids follow-item)}}))))
 
   ([message]
   (timbre/warn "Unknown request in persistence channel" message)))
