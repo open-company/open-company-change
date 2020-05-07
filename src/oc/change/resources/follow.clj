@@ -28,8 +28,8 @@
 
 (schema/defn ^:always-validate retrieve-publisher-followers
   :- {:publisher-uuid lib-schema/UniqueID :org-slug lib-follow/Slug :follower-uuids [lib-schema/UniqueID]}
-  [org-slug :- lib-follow/Slug follow-publisher-uuid :- lib-schema/UniqueID]
-  (lib-follow/retrieve-publisher-followers c/dynamodb-opts org-slug follow-publisher-uuid))
+  [org-slug :- lib-follow/Slug publisher-uuid :- lib-schema/UniqueID]
+  (lib-follow/retrieve-publisher-followers c/dynamodb-opts org-slug publisher-uuid))
 
 (schema/defn ^:always-validate retrieve-board-unfollowers
   :- {:board-uuid lib-schema/UniqueID :org-slug lib-follow/Slug :unfollower-uuids [lib-schema/UniqueID]}
@@ -67,16 +67,16 @@
   (lib-follow/delete-by-org! c/dynamodb-opts org-slug))
 
 (schema/defn ^:always-validate follow-publisher!
-  [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug follow-publisher-uuid :- lib-schema/UniqueID]
-  (lib-follow/follow-publisher! c/dynamodb-opts user-id org-slug follow-publisher-uuid))
+  [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug publisher-uuid :- lib-schema/UniqueID]
+  (lib-follow/follow-publisher! c/dynamodb-opts user-id org-slug publisher-uuid))
 
 (schema/defn ^:always-validate follow-board!
   [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug board-uuid :- lib-schema/UniqueID]
   (lib-follow/follow-board! c/dynamodb-opts user-id org-slug board-uuid))
 
 (schema/defn ^:always-validate unfollow-publisher!
-  [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug follow-publisher-uuid :- lib-schema/UniqueID]
-  (lib-follow/unfollow-publisher! c/dynamodb-opts user-id org-slug follow-publisher-uuid))
+  [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug publisher-uuid :- lib-schema/UniqueID]
+  (lib-follow/unfollow-publisher! c/dynamodb-opts user-id org-slug publisher-uuid))
 
 (schema/defn ^:always-validate unfollow-board!
   [user-id :- lib-schema/UniqueID org-slug :- lib-follow/Slug board-uuid :- lib-schema/UniqueID]
