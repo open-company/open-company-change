@@ -240,7 +240,7 @@
         client-id (-> ring-req :params :client-id)
         org-slug (:org-slug ?data)
         publisher-uuid (:publisher-uuid ?data)]
-    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
+    (timbre/info "[websocket] publisher/unfollow for:" user-id "org:" org-slug)
     (>!! persistence/persistence-chan {:unfollow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
 
 ;; Follow/unfollow board(s)
@@ -252,7 +252,7 @@
         client-id (-> ring-req :params :client-id)
         org-slug (:org-slug ?data)
         board-uuids (:board-uuids ?data)]
-    (timbre/info "[websocket] boards/follow for:" user-id "org:" org-slug)
+    (timbre/info "[websocket] boards/unfollow for:" user-id "org:" org-slug)
     (>!! persistence/persistence-chan {:unfollow-boards true :user-id user-id :client-id client-id :org-slug org-slug :board-uuids board-uuids})))
 
 (defmethod -event-msg-handler
@@ -274,7 +274,7 @@
         client-id (-> ring-req :params :client-id)
         org-slug (:org-slug ?data)
         board-uuid (:board-uuid ?data)]
-    (timbre/info "[websocket] board/follow for:" user-id "org:" org-slug)
+    (timbre/info "[websocket] board/unfollow for:" user-id "org:" org-slug)
     (>!! persistence/persistence-chan {:unfollow-board true :user-id user-id :client-id client-id :org-slug org-slug :board-uuid board-uuid})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
