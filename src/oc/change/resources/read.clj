@@ -8,6 +8,7 @@
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_read")))
 (def user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_user_id"))
+(def org-id-user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_org_id_user_id"))
 (def container-id-item-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_container_id_item_id"))
 (def container-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_container_id"))
 
