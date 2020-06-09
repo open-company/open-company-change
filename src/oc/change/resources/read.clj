@@ -4,22 +4,16 @@
             [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
             [taoensso.timbre :as timbre]
-            [oc.change.config :as c]))
+            [oc.change.config :as c]
+            [oc.lib.change.resources.read :as lib-read]))
 
-(def table-name (keyword (str c/dynamodb-table-prefix "_read")))
-(def user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_user_id"))
-(def org-id-user-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_org_id_user_id"))
-(def container-id-item-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_container_id_item_id"))
-(def container-id-gsi-name (str c/dynamodb-table-prefix "_read_gsi_container_id"))
-
-;; In theory, DynamoDB (and by extension, Faraday) support `{:return :count}` but it doesn't seem to be working
-;; https://github.com/ptaoussanis/faraday/issues/91
-(defn- count-for [user-id item-id]
-  (let [results (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]})]
-    {:item-id item-id :count (count results) :last-read-at (:read_at (last (sort-by :read-at (filterv #(= (:user_id %) user-id) results))))}))
+(def table-name (lib-read/table-name c/dynamodb-opts))
+(def user-id-gsi-name (lib-read/user-id-gsi-name c/dynamodb-opts))
+(def org-id-user-id-gsi-name (lib-read/org-id-user-id-gsi-name c/dynamodb-opts))
+(def container-id-item-id-gsi-name (lib-read/container-id-item-id-gsi-name c/dynamodb-opts))
+(def container-id-gsi-name (lib-read/container-id-gsi-name c/dynamodb-opts))
 
 (schema/defn ^:always-validate store!
-
   ;; Store a read entry for the specified user
   ([org-id :-  lib-schema/UniqueID
     container-id :- lib-schema/UniqueID
@@ -28,82 +22,57 @@
     user-name :- schema/Str
     avatar-url :- (schema/maybe schema/Str)
     read-at :- lib-schema/ISO8601]
-  (far/put-item c/dynamodb-opts table-name {
-      :org-id org-id
-      :container_id container-id
-      :item_id item-id
-      :user_id user-id
-      :name user-name
-      :avatar_url avatar-url
-      :read_at read-at})
-  true))
+  (lib-read/store! c/dynamodb-opts org-id container-id item-id user-id user-name avatar-url read-at)))
 
 (schema/defn ^:always-validate delete!
   [item-id :- lib-schema/UniqueID user-id :- lib-schema/UniqueID]
-  (far/delete-item c/dynamodb-opts table-name {:item_id item-id
-                                               :user_id user-id}))
+  (lib-read/delete! c/dynamodb-opts item-id user-id))
 
 (schema/defn ^:always-validate delete-by-item!
   [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
-  (doseq [item (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]} {:index container-id-item-id-gsi-name})]
-    (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id item)
-                                                 :user_id (:user_id item)})))
+  (lib-read/delete-by-item! c/dynamodb-opts container-id item-id))
 
 (schema/defn ^:always-validate delete-by-container!
   [container-id :- lib-schema/UniqueID]
-  (doseq [item (far/query c/dynamodb-opts table-name {:container_id [:eq container-id]} {:index container-id-gsi-name})]
-    (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id item)
-                                                 :user_id (:user_id item)})))
+  (lib-read/delete-by-container! c/dynamodb-opts container-id))
 
 (schema/defn ^:always-validate move-item!
   [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
-  (let [items-to-move (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]}
-                       {:index container-id-item-id-gsi-name})]
-    (timbre/info "Read move-item! for" item-id "moving:" (count items-to-move) "items from container" old-container-id "to" new-container-id)
-    (doseq [item items-to-move]
-      (let [full-item (far/get-item c/dynamodb-opts table-name {:item_id (:item_id item) :user_id (:user_id item)})]
-        (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id full-item)
-                                                     :user_id (:user_id full-item)})
-        (far/put-item c/dynamodb-opts table-name {
-          :org-id (:org-id full-item)
-          :container_id new-container-id
-          :item_id (:item_id full-item)
-          :user_id (:user_id full-item)
-          :name (:name full-item)
-          :avatar_url (:avatar_url full-item)
-          :read_at (:read_at full-item)})))))
+  (lib-read/move-item! c/dynamodb-opts item-id old-container-id new-container-id))
 
 (schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
                                                      :name schema/Str
                                                      :avatar-url (schema/maybe schema/Str)
                                                      :read-at lib-schema/ISO8601}]
   [item-id :- lib-schema/UniqueID]
-  (->> (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]})
-      (map #(clojure.set/rename-keys % {:user_id :user-id :avatar_url :avatar-url :read_at :read-at}))
-      (map #(select-keys % [:user-id :name :avatar-url :read-at]))))
+  (lib-read/retrieve-by-item c/dynamodb-opts item-id))
 
 (schema/defn ^:always-validate retrieve-by-user :- [{(schema/optional-key :container-id) lib-schema/UniqueID
                                                      :item-id lib-schema/UniqueID
                                                      :read-at lib-schema/ISO8601}]
   ([user-id :- lib-schema/UniqueID]
-  (->>
-      (far/query c/dynamodb-opts table-name {:user_id [:eq user-id]} {:index user-id-gsi-name})
-      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :read_at :read-at}))
-      (map #(select-keys % [:container-id :item-id :read-at]))))
+  (lib-read/retrieve-by-user c/dynamodb-opts user-id))
 
   ([user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
-  (->>
-      (far/query c/dynamodb-opts table-name {:user_id [:eq user-id] :container_id [:eq container-id]}
-                                            {:index user-id-gsi-name})
-      (map #(clojure.set/rename-keys % {:item_id :item-id :read_at :read-at}))
-      (map #(select-keys % [:item-id :read-at])))))
+  (lib-read/retrieve-by-user c/dynamodb-opts user-id container-id)))
 
+(schema/defn ^:always-validate retrieve-by-user-item :- {(schema/optional-key :user-id) lib-schema/UniqueID
+                                                         (schema/optional-key :name) schema/Str
+                                                         (schema/optional-key :avatar-url) (schema/maybe schema/Str)
+                                                         (schema/optional-key :read-at) lib-schema/ISO8601}
+  [user-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-user-item c/dynamodb-opts user-id item-id))
+
+(schema/defn ^:always-validate retrieve-by-user-org :- [{(schema/optional-key :item-id) lib-schema/UniqueID
+                                                         (schema/optional-key :read-at) lib-schema/ISO8601}]
+  [org-id :- lib-schema/UniqueID user-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-user-org c/dynamodb-opts org-id user-id))
 
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
                                            :count schema/Int
                                            :last-read-at (schema/maybe lib-schema/ISO8601)}]
   [item-ids :- [lib-schema/UniqueID] user-id :- lib-schema/UniqueID]
-  (pmap (partial count-for user-id) item-ids))
+  (lib-read/counts c/dynamodb-opts item-ids user-id))
 
 (comment
 
