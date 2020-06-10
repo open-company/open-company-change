@@ -1,0 +1,98 @@
+(ns oc.change.db.migrations.add-part-read-table
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            [oc.change.resources.read :as read]
+            [oc.change.resources.common :refer (gsi-exists-on-table?)]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; needs to be idempotent
+(defn up [db-opts]
+  
+  ;; Create follow table if not already present
+  (println
+    (far/ensure-table db-opts
+      read/part-table-name
+      [:part_id :s]
+      {:range-keydef [:user_id :s]
+       :billing-mode :pay-per-request
+       :block? true}))
+
+  ;; Create user-id/item-id gsindex
+  (print
+   (if (gsi-exists-on-table? db-opts read/part-user-id-item-id-gsi-name read/part-table-name)
+     (format "%s index already exists on %s, skipping" read/part-user-id-item-id-gsi-name read/part-table-name)
+     @(far/update-table db-opts
+        read/part-table-name
+        {:gsindexes {:operation :create
+                     :name read/part-user-id-item-id-gsi-name
+                     :billing-mode :pay-per-request
+                     :hash-keydef [:user_id :s]
+                     :range-keydef [:item_id :s]
+                     :projection :all}})))
+
+  ;; Create user-id/container-id gsindex
+  (print
+   (if (gsi-exists-on-table? db-opts read/part-user-id-gsi-name read/part-table-name)
+     (format "%s index already exists on %s, skipping" read/part-user-id-gsi-name read/part-table-name)
+     @(far/update-table db-opts
+        read/part-table-name
+        {:gsindexes {:operation :create
+                     :name read/part-user-id-gsi-name
+                     :billing-mode :pay-per-request
+                     :hash-keydef [:user_id :s]
+                     :range-keydef [:container_id :s]
+                     :projection :all}})))
+
+  ;; Create item-id/container-id gsindex
+  (print
+   (if (gsi-exists-on-table? db-opts read/part-container-id-item-id-gsi-name read/part-table-name)
+     (format "%s index already exists on %s, skipping" read/part-container-id-item-id-gsi-name read/part-table-name)
+     @(far/update-table db-opts
+       read/part-table-name
+       {:gsindexes {:operation :create
+                    :name read/part-container-id-item-id-gsi-name
+                    :billing-mode :pay-per-request
+                    :hash-keydef [:item_id :s]
+                    :range-keydef [:container_id :s]
+                    :projection :keys-only}})))
+
+  ;; Create org-id gsindex
+  (println
+   (if (gsi-exists-on-table? db-opts read/part-org-id-user-id-gsi-name read/part-table-name)
+     (format "%s index already exists on %s, skipping" read/part-org-id-user-id-gsi-name read/part-table-name)
+     @(far/update-table db-opts read/part-table-name
+       {:gsindexes {:operation :create
+                    :name read/part-org-id-user-id-gsi-name
+                    :billing-mode :pay-per-request
+                    :hash-keydef [:org_id :s]
+                    :range-keydef [:user_id :s]
+                    :projection :all}})))
+
+  ;; Create container-id gsindex
+  (println
+   (if (gsi-exists-on-table? db-opts read/part-container-id-gsi-name read/part-table-name)
+     (format "%s index already exists on %s, skipping" read/part-container-id-gsi-name read/part-table-name)
+     @(far/update-table db-opts read/part-table-name
+        {:gsindexes
+          {:operation :create
+           :name read/part-container-id-gsi-name
+           :billing-mode :pay-per-request
+           :hash-keydef [:container_id :s]
+           :range-keydef [:user_id :s]
+           :projection :keys-only}})))
+
+  ;; Create item-id gsindex
+  (println
+   (if (gsi-exists-on-table? db-opts read/part-item-id-gsi-name read/part-table-name)
+     (format "%s index already exists on %s, skipping" read/part-item-id-gsi-name read/part-table-name)
+     @(far/update-table db-opts read/part-table-name
+        {:gsindexes
+          {:operation :create
+           :name read/part-item-id-gsi-name
+           :billing-mode :pay-per-request
+           :hash-keydef [:item_id :s]
+           :range-keydef [:user_id :s]
+           :projection :keys-only}})))
+
+  true) ; return true on success

@@ -24,9 +24,12 @@
 (defun- persist
 
   ;; Add an entry
-  ([:add :entry container-id item-id author-id change-at _new-item _old-item]
+  ([:add :entry container-id item-id author-id change-at new-item _old-item]
   (timbre/info "Persisting add entry change on:" item-id "for container:" container-id "and author:" author-id)
-  (pmap #(change/store! % item-id change-at) [container-id author-id]))
+  (pmap #(change/store! % item-id change-at) [container-id author-id])
+  (read/store! (:org-uuid new-item) container-id item-id author-id
+               (-> new-item :publisher :name) (-> new-item :publisher :avatar-url)
+               (:published-at new-item)))
 
   ;; Delete an entry
   ([:delete :entry container-id item-id _author-id _change-at _new-item _old-item]
@@ -77,6 +80,16 @@
   ([:unfollow :board user-id org-slug board-uuid :guard string?]
   (timbre/info "Persisting unfollow for user:" user-id "of org:" org-slug "board:" board-uuid)
   (follow/unfollow-board! user-id org-slug board-uuid))
+
+  ;; Add a comment
+  ([:add :comment org-id container-id item-id part-id author-id avatar-url author-name new-item _old-item]
+  (timbre/info "Persisting add comment change on:" part-id "for item:" item-id "and container:" container-id "and author:" author-id)
+  (read/store-part! org-id container-id item-id part-id author-id author-name avatar-url (:created-at new-item)))
+
+  ;; Delete a comment
+  ([:delete :comment container-id item-id part-id _author-id _change-at _new-item _old-item]
+  (timbre/info "Persisting delete comment change on:" part-id "for item:" item-id "and container:" container-id)
+  (read/delete-parts-by-item! container-id item-id))
 
   ;; Else
   ([_op _resource _container _item _author _change _new-item _old-item]
@@ -240,6 +253,27 @@
     ;; Send an item/status to everyone watching this container so they get the updated list of readers
     (let [reads (read/retrieve-by-item item-id)
           status {:item-id item-id :reads reads}]
+      (>!! watcher/watcher-chan {:send true
+                                 :watch-id container-id
+                                 :event :item/status
+                                 :payload status}))))
+
+  ([message :guard :part-read]
+  ;; Persist that a specified user read a specified item
+  (let [org-id (:org-id message)
+        user-id (:user-id message)
+        container-id (:container-id message)
+        item-id (:item-id message)
+        part-id (:part-id message)
+        user-name (:name message)
+        avatar-url (:avatar-url message)
+        read-at (:read-at message)]
+    (timbre/info "Read request for user:" user-id "for part:" part-id "item:" item-id "at:" read-at " org: " org-id " container: " container-id " name: " user-name " avatar: " avatar-url)
+    (read/store-part! org-id container-id item-id part-id user-id user-name avatar-url read-at)
+    ;; Send an item/status to everyone watching this container so they get the updated list of readers
+    (let [reads (read/retrieve-by-item item-id)
+          part-reads (read/retrieve-parts-by-item item-id)
+          status {:item-id item-id :reads reads :part-reads part-reads}]
       (>!! watcher/watcher-chan {:send true
                                  :watch-id container-id
                                  :event :item/status

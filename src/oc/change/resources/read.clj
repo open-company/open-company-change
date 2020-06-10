@@ -7,14 +7,25 @@
             [oc.change.config :as c]
             [oc.lib.change.resources.read :as lib-read]))
 
+;; Table and GSIndex names
+
 (def table-name (lib-read/table-name c/dynamodb-opts))
+(def part-table-name (lib-read/part-table-name c/dynamodb-opts))
+(def part-item-id-gsi-name (lib-read/part-item-id-gsi-name c/dynamodb-opts))
 (def user-id-gsi-name (lib-read/user-id-gsi-name c/dynamodb-opts))
+(def part-user-id-gsi-name (lib-read/part-user-id-gsi-name c/dynamodb-opts))
 (def org-id-user-id-gsi-name (lib-read/org-id-user-id-gsi-name c/dynamodb-opts))
+(def part-org-id-user-id-gsi-name (lib-read/part-org-id-user-id-gsi-name c/dynamodb-opts))
 (def container-id-item-id-gsi-name (lib-read/container-id-item-id-gsi-name c/dynamodb-opts))
+(def part-container-id-item-id-gsi-name (lib-read/part-container-id-item-id-gsi-name c/dynamodb-opts))
 (def container-id-gsi-name (lib-read/container-id-gsi-name c/dynamodb-opts))
+(def part-container-id-gsi-name (lib-read/part-container-id-gsi-name c/dynamodb-opts))
+(def part-user-id-item-id-gsi-name (lib-read/part-user-id-item-id-gsi-name c/dynamodb-opts))
+
+;; Store
 
 (schema/defn ^:always-validate store!
-  ;; Store a read entry for the specified user
+  ;; Store a read entry fgr a user and an item
   ([org-id :-  lib-schema/UniqueID
     container-id :- lib-schema/UniqueID
     item-id :- lib-schema/UniqueID
@@ -24,21 +35,26 @@
     read-at :- lib-schema/ISO8601]
   (lib-read/store! c/dynamodb-opts org-id container-id item-id user-id user-name avatar-url read-at)))
 
-(schema/defn ^:always-validate delete!
-  [item-id :- lib-schema/UniqueID user-id :- lib-schema/UniqueID]
-  (lib-read/delete! c/dynamodb-opts item-id user-id))
+(schema/defn ^:always-validate store-part!
+  ;; Store a read entry fgr a user and a part
+  ([org-id :-  lib-schema/UniqueID
+    container-id :- lib-schema/UniqueID
+    item-id :- lib-schema/UniqueID
+    part-id :- lib-schema/UniqueID
+    user-id :- lib-schema/UniqueID
+    user-name :- schema/Str
+    avatar-url :- (schema/maybe schema/Str)
+    read-at :- lib-schema/ISO8601]
+  (lib-read/store-part! c/dynamodb-opts org-id container-id item-id part-id user-id user-name avatar-url read-at)))
 
-(schema/defn ^:always-validate delete-by-item!
-  [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
-  (lib-read/delete-by-item! c/dynamodb-opts container-id item-id))
+;; Retrieve
 
-(schema/defn ^:always-validate delete-by-container!
-  [container-id :- lib-schema/UniqueID]
-  (lib-read/delete-by-container! c/dynamodb-opts container-id))
-
-(schema/defn ^:always-validate move-item!
-  [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
-  (lib-read/move-item! c/dynamodb-opts item-id old-container-id new-container-id))
+(schema/defn ^:always-validate retrieve-by-part :- [{:user-id lib-schema/UniqueID
+                                                     :name schema/Str
+                                                     :avatar-url (schema/maybe schema/Str)
+                                                     :read-at lib-schema/ISO8601}]
+  [part-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-part c/dynamodb-opts part-id))
 
 (schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
                                                      :name schema/Str
@@ -47,14 +63,35 @@
   [item-id :- lib-schema/UniqueID]
   (lib-read/retrieve-by-item c/dynamodb-opts item-id))
 
+(schema/defn ^:always-validate retrieve-parts-by-item :- [{:user-id lib-schema/UniqueID
+                                                           :item-id lib-schema/UniqueID
+                                                           :part-id lib-schema/UniqueID}]
+  [item-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-parts-by-item c/dynamodb-opts item-id))
+
 (schema/defn ^:always-validate retrieve-by-user :- [{(schema/optional-key :container-id) lib-schema/UniqueID
                                                      :item-id lib-schema/UniqueID
                                                      :read-at lib-schema/ISO8601}]
-  ([user-id :- lib-schema/UniqueID]
+  [user-id :- lib-schema/UniqueID]
   (lib-read/retrieve-by-user c/dynamodb-opts user-id))
 
-  ([user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
-  (lib-read/retrieve-by-user c/dynamodb-opts user-id container-id)))
+(schema/defn ^:always-validate retrieve-parts-by-user :- [{(schema/optional-key :container-id) lib-schema/UniqueID
+                                                           :item-id lib-schema/UniqueID
+                                                           :part-id lib-schema/UniqueID
+                                                           :read-at lib-schema/ISO8601}]
+  [user-id :- lib-schema/UniqueID]
+   (lib-read/retrieve-parts-by-user c/dynamodb-opts user-id))
+
+(schema/defn ^:always-validate retrieve-by-user-part :- {(schema/optional-key :org-id) lib-schema/UniqueID
+                                                         (schema/optional-key :container-id) lib-schema/UniqueID
+                                                         (schema/optional-key :item-id) lib-schema/UniqueID
+                                                         (schema/optional-key :oart-id) lib-schema/UniqueID
+                                                         (schema/optional-key :user-id) lib-schema/UniqueID
+                                                         (schema/optional-key :name) schema/Str
+                                                         (schema/optional-key :avatar-url) (schema/maybe schema/Str)
+                                                         (schema/optional-key :read-at) lib-schema/ISO8601}
+  [user-id :- lib-schema/UniqueID part-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-user-part c/dynamodb-opts user-id part-id))
 
 (schema/defn ^:always-validate retrieve-by-user-item :- {(schema/optional-key :user-id) lib-schema/UniqueID
                                                          (schema/optional-key :name) schema/Str
@@ -63,16 +100,125 @@
   [user-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
   (lib-read/retrieve-by-user-item c/dynamodb-opts user-id item-id))
 
+(schema/defn ^:always-validate retrieve-parts-by-user-item :- [{(schema/optional-key :part-id) lib-schema/UniqueID
+                                                                (schema/optional-key :user-id) lib-schema/UniqueID
+                                                                (schema/optional-key :name) schema/Str
+                                                                (schema/optional-key :avatar-url) (schema/maybe schema/Str)
+                                                                (schema/optional-key :read-at) lib-schema/ISO8601}]
+  [user-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-parts-by-user-item c/dynamodb-opts user-id item-id))
+
+(schema/defn ^:always-validate retrieve-by-user-container :- [{:item-id lib-schema/UniqueID
+                                                               :read-at lib-schema/ISO8601}]
+  [user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-user-container c/dynamodb-opts user-id container-id))
+
+(schema/defn ^:always-validate retrieve-parts-by-user-container :- [{:item-id lib-schema/UniqueID
+                                                                     :part-id lib-schema/UniqueID
+                                                                     :read-at lib-schema/ISO8601}]
+  [user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-parts-by-user-container c/dynamodb-opts user-id container-id))
+
 (schema/defn ^:always-validate retrieve-by-user-org :- [{(schema/optional-key :item-id) lib-schema/UniqueID
+                                                         (schema/optional-key :container-id) lib-schema/UniqueID
                                                          (schema/optional-key :read-at) lib-schema/ISO8601}]
-  [org-id :- lib-schema/UniqueID user-id :- lib-schema/UniqueID]
-  (lib-read/retrieve-by-user-org c/dynamodb-opts org-id user-id))
+  [user-id :- lib-schema/UniqueID org-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-user-org c/dynamodb-opts user-id org-id))
+
+(schema/defn ^:always-validate retrieve-parts-by-user-org :- [{(schema/optional-key :part-id) lib-schema/UniqueID
+                                                               (schema/optional-key :item-id) lib-schema/UniqueID
+                                                               (schema/optional-key :container-id) lib-schema/UniqueID
+                                                               (schema/optional-key :read-at) lib-schema/ISO8601}]
+  [user-id :- lib-schema/UniqueID org-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-parts-by-user-org c/dynamodb-opts user-id org-id))
+
+(schema/defn ^:always-validate retrieve-by-container :- [{(schema/optional-key :user-id) lib-schema/UniqueID
+                                                          (schema/optional-key :item-id) lib-schema/UniqueID
+                                                          (schema/optional-key :read-at) lib-schema/ISO8601}]
+  [container-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-container c/dynamodb-opts container-id))
+
+(schema/defn ^:always-validate retrieve-parts-by-container :- [{(schema/optional-key :user-id) lib-schema/UniqueID
+                                                                (schema/optional-key :part-id) lib-schema/UniqueID
+                                                                (schema/optional-key :item-id) lib-schema/UniqueID
+                                                                (schema/optional-key :read-at) lib-schema/ISO8601}]
+  [container-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-parts-by-container c/dynamodb-opts container-id))
+
+(schema/defn ^:always-validate retrieve-by-org :- [{(schema/optional-key :user-id) lib-schema/UniqueID
+                                                    (schema/optional-key :item-id) lib-schema/UniqueID}]
+  [org-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-by-org c/dynamodb-opts org-id))
+
+(schema/defn ^:always-validate retrieve-parts-by-org :- [{(schema/optional-key :user-id) lib-schema/UniqueID
+                                                          (schema/optional-key :part-id) lib-schema/UniqueID}]
+  [org-id :- lib-schema/UniqueID]
+  (lib-read/retrieve-parts-by-org c/dynamodb-opts org-id))
+
+;; Move
+
+(schema/defn ^:always-validate move-item!
+  [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
+  (lib-read/move-item! c/dynamodb-opts item-id old-container-id new-container-id))
+
+;; Delete
+
+(schema/defn ^:always-validate delete-user-part!
+  [user-id :- lib-schema/UniqueID part-id :- lib-schema/UniqueID]
+  (lib-read/delete-user-part! c/dynamodb-opts user-id part-id))
+
+(schema/defn ^:always-validate delete!
+  [user-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  (lib-read/delete-user-item! c/dynamodb-opts user-id item-id))
+
+(schema/defn ^:always-validate delete-parts-by-item!
+
+  ([container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+   (lib-read/delete-parts-by-item! c/dynamodb-opts item-id))
+
+  ([item-id :- lib-schema/UniqueID]
+   (lib-read/delete-parts-by-item! c/dynamodb-opts item-id)))
+
+(schema/defn ^:always-validate delete-by-item!
+
+  ([container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+   (lib-read/delete-by-item! c/dynamodb-opts item-id))
+
+  ([item-id :- lib-schema/UniqueID]
+   (lib-read/delete-by-item! c/dynamodb-opts item-id)))
+
+(schema/defn ^:always-validate delete-by-part!
+
+  ([container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID part-id :- lib-schema/UniqueID]
+   (lib-read/delete-by-part! c/dynamodb-opts part-id))
+
+  ([item-id :- lib-schema/UniqueID part-id :- lib-schema/UniqueID]
+   (lib-read/delete-by-part! c/dynamodb-opts part-id))
+
+  ([part-id :- lib-schema/UniqueID]
+   (lib-read/delete-by-part! c/dynamodb-opts part-id)))
+
+(schema/defn ^:always-validate delete-by-container!
+  [container-id :- lib-schema/UniqueID]
+  (lib-read/delete-by-container! c/dynamodb-opts container-id))
+
+(schema/defn ^:always-validate delete-by-org!
+  [org-id :- lib-schema/UniqueID]
+  (lib-read/delete-by-org! c/dynamodb-opts org-id))
+
+;; Count
 
 (schema/defn ^:always-validate counts :- [{:item-id lib-schema/UniqueID
                                            :count schema/Int
                                            :last-read-at (schema/maybe lib-schema/ISO8601)}]
   [item-ids :- [lib-schema/UniqueID] user-id :- lib-schema/UniqueID]
   (lib-read/counts c/dynamodb-opts item-ids user-id))
+
+(schema/defn ^:always-validate part-counts :- [{:part-id lib-schema/UniqueID
+                                                :count schema/Int
+                                                :last-read-at (schema/maybe lib-schema/ISO8601)}]
+  [part-ids :- [lib-schema/UniqueID] user-id :- lib-schema/UniqueID]
+  (lib-read/part-counts c/dynamodb-opts part-ids user-id))
 
 (comment
 
