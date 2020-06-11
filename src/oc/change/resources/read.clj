@@ -49,12 +49,32 @@
 
 ;; Retrieve
 
+<<<<<<< HEAD
 (schema/defn ^:always-validate retrieve-by-part :- [{:user-id lib-schema/UniqueID
                                                      :name schema/Str
                                                      :avatar-url (schema/maybe schema/Str)
                                                      :read-at lib-schema/ISO8601}]
   [part-id :- lib-schema/UniqueID]
   (lib-read/retrieve-by-part c/dynamodb-opts part-id))
+=======
+(schema/defn ^:always-validate move-item!
+  [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
+  (let [items-to-move (far/query c/dynamodb-opts table-name {:item_id [:eq item-id]}
+                       {:index container-id-item-id-gsi-name})]
+    (timbre/info "Read move-item! for" item-id "moving:" (count items-to-move) "items from container" old-container-id "to" new-container-id)
+    (doseq [item items-to-move]
+      (let [full-item (far/get-item c/dynamodb-opts table-name {:item_id (:item_id item) :user_id (:user_id item)})]
+        (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id full-item)
+                                                     :user_id (:user_id full-item)})
+        (far/put-item c/dynamodb-opts table-name {
+          :org_id (:org_id full-item)
+          :container_id new-container-id
+          :item_id (:item_id full-item)
+          :user_id (:user_id full-item)
+          :name (:name full-item)
+          :avatar_url (:avatar_url full-item)
+          :read_at (:read_at full-item)})))))
+>>>>>>> following-nav
 
 (schema/defn ^:always-validate retrieve-by-item :- [{:user-id lib-schema/UniqueID
                                                      :name schema/Str
