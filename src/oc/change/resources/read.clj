@@ -29,7 +29,7 @@
     avatar-url :- (schema/maybe schema/Str)
     read-at :- lib-schema/ISO8601]
   (far/put-item c/dynamodb-opts table-name {
-      :org-id org-id
+      :org_id org-id
       :container_id container-id
       :item_id item-id
       :user_id user-id
@@ -65,7 +65,7 @@
         (far/delete-item c/dynamodb-opts table-name {:item_id (:item_id full-item)
                                                      :user_id (:user_id full-item)})
         (far/put-item c/dynamodb-opts table-name {
-          :org-id (:org-id full-item)
+          :org_id (:org_id full-item)
           :container_id new-container-id
           :item_id (:item_id full-item)
           :user_id (:user_id full-item)
