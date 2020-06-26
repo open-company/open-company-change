@@ -207,6 +207,7 @@
   ([message :guard :seen]
   ;; Persist that a specified user saw a specified container at a specified time
   (let [user-id (:user-id message)
+        org-id (:org-id message)
         container-id (:container-id message)
         item-id (:item-id message)
         publisher-id (:publisher-id message)
@@ -215,9 +216,9 @@
     (timbre/info "Seen request for user:" user-id "on:" container-id "at:" seen-at)
     (if (and item-id publisher-id)
       ;; upsert an item seen entry for the container and the author
-      (pmap #(seen/store! user-id % item-id seen-at) [container-id publisher-id])
+      (pmap #(seen/store! user-id org-id % item-id seen-at) [container-id publisher-id])
       ;; upsert a seen entry for the container (NB: container here may also be a user, the author)
-      (seen/store! user-id container-id seen-at))
+      (seen/store! user-id org-id container-id seen-at))
     ;; recurse after upserting the message so it seems the client asked for status on the seen container...
     ;; in this way the client will receive an updated container/status message for this container
     (handle-persistence-message (-> message

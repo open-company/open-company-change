@@ -1,0 +1,15 @@
+(ns oc.change.db.migrations.disable-ttl
+  (:require [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            ; [oc.change.resources.change :as change]
+            [oc.change.resources.seen :as seen]
+            [oc.lib.dynamo.common :as ttl]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; needs to be idempotent
+(defn up [dynamodb-opts]
+  (when-not (clojure.string/starts-with? (:endpoint dynamodb-opts) "http://localhost")
+    ;; Remove ttl from seen table if present
+    (ttl/maybe-disable-ttl dynamodb-opts seen/table-name))
+
+  true) ; return true on success
