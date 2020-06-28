@@ -128,10 +128,11 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
+        org-id (:org-id ?data)
         container-id (:container-id ?data)
         seen-at (:seen-at ?data)]
-    (timbre/info "[websocket] container/seen for:" container-id "at:" seen-at "by:" user-id "/" client-id)
-    (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id
+    (timbre/info "[websocket] container/seen for org:" org-id "container:" container-id "at:" seen-at "by:" user-id "/" client-id)
+    (>!! persistence/persistence-chan {:seen true :user-id user-id :org-id org-id :container-id container-id
                                        :seen-at seen-at :client-id client-id})))
 
 (defmethod -event-msg-handler
@@ -140,14 +141,15 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
+        org-id (:org-id ?data)
         container-id (:container-id ?data)
         item-id (:item-id ?data)
         publisher-id (:publisher-id ?data)
         seen-at (:seen-at ?data)]
     (timbre/info "[websocket] item/seen for:" item-id "published by:" publisher-id "in:" container-id
-                                        "at:" seen-at "by:" user-id "/" client-id)
+                                        "org:" org-id "at:" seen-at "by:" user-id "/" client-id)
     (>!! persistence/persistence-chan {:seen true :user-id user-id :container-id container-id
-                                       :item-id item-id :publisher-id publisher-id
+                                       :org-id org-id :item-id item-id :publisher-id publisher-id
                                        :client-id client-id :seen-at seen-at})))
 
 (defmethod -event-msg-handler
