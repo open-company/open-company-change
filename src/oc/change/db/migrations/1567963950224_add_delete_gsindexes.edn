@@ -27,7 +27,7 @@
                        :name seen/container-id-item-id-gsi-name
                        :hash-keydef [:item-id :s]
                        :range-keydef [:container_id :s]
-                       :projection :keys-only}})))
+                       :projection :all}})))
 
     (println "")
     (println
@@ -74,7 +74,7 @@
                        :name seen/container-id-gsi-name
                        :hash-keydef [:container_id :s]
                        :range-keydef [:user_id :s]
-                       :projection :keys-only}})))
+                       :projection :all}})))
 
     (when (and (not read-container-id-item-id-gsi-exists?)
                (not read-container-id-gsi-exists?))

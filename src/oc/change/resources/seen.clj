@@ -61,6 +61,12 @@
   [user-id :- lib-schema/UniqueID org-id :- lib-schema/UniqueID]
   (lib-seen/retrieve-by-user-org c/dynamodb-opts user-id org-id))
 
+(schema/defn ^:always-validate retrieve-by-user-container :- {(schema/optional-key :org-id) lib-schema/UniqueID
+                                                              (schema/optional-key :container-id) lib-schema/UniqueID
+                                                              (schema/optional-key :seen-at) lib-schema/ISO8601}
+  [user-id :- lib-schema/UniqueID container-id :- lib-schema/UniqueID]
+  (lib-seen/retrieve-by-user-container c/dynamodb-opts user-id container-id))
+
 (schema/defn ^:always-validate retrieve-by-user-item :- (schema/maybe {:org-id lib-schema/UniqueID
                                                                        :container-id lib-schema/UniqueID
                                                                        :item-id lib-schema/UniqueID
