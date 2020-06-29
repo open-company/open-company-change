@@ -13,6 +13,7 @@
     (ttl/maybe-enable-ttl dynamodb-opts change/table-name)
   
     ;; Add ttl to seen table
-    ; (ttl/maybe-enable-ttl dynamodb-opts seen/table-name))
+    ; (ttl/maybe-enable-ttl dynamodb-opts seen/table-name)
+  )
 
   true) ; return true on success
