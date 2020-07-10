@@ -97,6 +97,8 @@
                            :change-type change-type
                            :item-id item-id
                            :user-id user-id
+                           :item-status (if draft? "draft" "published")
+                           :resource-type resource-type
                            :change-at change-at}
           ws-payload (cond
                        (= change-type :move)
