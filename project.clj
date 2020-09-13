@@ -41,7 +41,10 @@
     [org.apache.httpcomponents/httpclient "4.5.11"]
 
     ;; Library for OC projects https://github.com/open-company/open-company-lib
-    [open-company/lib "0.17.29-alpha23"]
+    [open-company/lib "0.17.29-alpha36" :exclusions [clj-http
+                                                     org.clojure/data.json
+                                                     org.clojure/tools.logging
+                                                     org.bouncycastle/bcpkix-jdk15on]]
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
     ;; core.async - Async programming and communication https://github.com/clojure/core.async
