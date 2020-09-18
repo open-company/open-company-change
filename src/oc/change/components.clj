@@ -1,6 +1,7 @@
 (ns oc.change.components
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
+            [oc.lib.sentry.core :refer (map->SentryCapturer)]
             [org.httpkit.server :as httpkit]
             [oc.lib.sqs :as sqs]
             [oc.lib.async.watcher :as watcher]
@@ -59,15 +60,18 @@
         (dissoc component :async-consumers))
     component)))
 
-(defn change-system [{:keys [httpkit sqs-consumer]}]
+(defn change-system [{httpkit :httpkit sqs-consumer :sqs-consumer sentry :sentry}]
   (component/system-map
+    :sentry-capturer (map->SentryCapturer sentry)
     :async-consumers (component/using
                         (map->AsyncConsumers {})
-                        [])
-    :sqs-consumer (sqs/sqs-listener sqs-consumer)
+                        [:sentry-capturer])
+    :sqs-consumer (component/using
+                   (sqs/sqs-listener sqs-consumer)
+                   [:sentry-capturer])
     :handler (component/using
                 (map->Handler {:handler-fn (:handler-fn httpkit)})
-                [])
+                [:sentry-capturer])
     :server  (component/using
                 (map->HttpKit {:options {:port (:port httpkit)}})
                 [:handler])))
