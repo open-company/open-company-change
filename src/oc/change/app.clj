@@ -198,16 +198,12 @@
   (if c/dsn
     (timbre/merge-config!
       {:level (keyword c/log-level)
-       :appenders {:sentry (sentry/sentry-appender {:dsn c/dsn
-                                                    :release c/sentry-release
-                                                    :environment c/sentry-env})}})
+       :appenders {:sentry (sentry/sentry-appender c/sentry-config)}})
     (timbre/merge-config! {:level (keyword c/log-level)}))
 
   ;; Start the system
   (-> {:httpkit {:handler-fn app :port port}
-       :sentry {:dsn c/dsn
-                :release c/sentry-release
-                :environment c/sentry-env}
+       :sentry c/sentry-config
        :sqs-consumer {
           :sqs-queue c/aws-sqs-change-queue
           :message-handler sqs-handler

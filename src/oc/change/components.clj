@@ -26,7 +26,7 @@
         (http-kit)
         (websockets-api/stop)
         (timbre/info "[http] stopped")
-        (dissoc component :http-kit))
+        (assoc component :http-kit nil))
       component)))
 
 (defrecord Handler [handler-fn]
@@ -38,7 +38,7 @@
 
   (stop [component]
     (timbre/info "[handler] stopped")
-    (dissoc component :handler)))
+    (assoc component :handler nil)))
 
 (defrecord AsyncConsumers []
   component/Lifecycle
@@ -57,7 +57,7 @@
         (persistence/stop) ; core.async channel consumer for persisting events
         (watcher/stop) ; core.async channel consumer for watched items (containers watched by websockets) events
         (timbre/info "[async-consumers] stopped")
-        (dissoc component :async-consumers))
+        (assoc component :async-consumers nil))
     component)))
 
 (defn change-system [{httpkit :httpkit sqs-consumer :sqs-consumer sentry :sentry}]
