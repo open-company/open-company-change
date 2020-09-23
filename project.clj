@@ -183,7 +183,7 @@
 
   :eastwood {
     ;; Disable some linters that are enabled by default:
-    ;; contant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond`
+    ;; constant-test - just seems mostly ill-advised, logical constants are useful in something like a `->cond`
     ;; suspcious-experession - unfortunate, but it's failing on defrecord of a com.stuartsierra.component component
     ;; implicit-dependencies - uhh, just seems dumb
     :exclude-linters [:constant-test :suspicious-expression :implicit-dependencies]
