@@ -25,6 +25,27 @@
 
 (def UniqueDraftID (schema/pred unique-draft-id?))
 
+(schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
+  [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
+  (if (sequential? container)
+    (flatten (pmap retrieve container))
+    (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]}
+          {:filter-expr "#k > :v"
+           :expr-attr-names {"#k" "ttl"}
+           :expr-attr-vals {":v" (ttl/ttl-now)}})
+      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
+      (map #(select-keys % [:container-id :item-id :change-at])))))
+
+(schema/defn ^:always-validate retrieve-by-item :- (schema/maybe {(schema/optional-key :container-id) UniqueDraftID
+                                                                  (schema/optional-key :item-id) UniqueDraftID
+                                                                  (schema/optional-key :change-at) lib-schema/ISO8601})
+  [container-id :- UniqueDraftID item-id :- UniqueDraftID]
+  (when-let [full-item (far/get-item c/dynamodb-opts table-name {:container_id container-id
+                                                                 :item_id item-id})]
+    (-> full-item
+     (clojure.set/rename-keys {:container_id :container-id :item_id :item-id :change_at :change-at})
+     (select-keys [:container-id :item-id :change-at]))))
+
 (schema/defn ^:always-validate store!
   [container-id :- UniqueDraftID item-id :- UniqueDraftID change-at :- lib-schema/ISO8601]
   (far/put-item c/dynamodb-opts table-name {
@@ -47,27 +68,9 @@
 
 (schema/defn ^:always-validate move-item!
   [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
-  (let [items-to-move (far/query c/dynamodb-opts table-name {:item_id [:eq item-id] :container_id [:eq old-container-id]})]
-    (timbre/info "Change move-item! for" item-id "moving:" (count items-to-move) "items from container" old-container-id "to" new-container-id)
-    (doseq [item items-to-move]
-      (far/delete-item c/dynamodb-opts table-name {:container_id (:container_id item)
-                                                   :item_id (:item_id item)})
-      (far/put-item c/dynamodb-opts table-name {
-        :container_id new-container-id
-        :item_id item-id
-        :change_at (:change_at item)
-        :ttl (:ttl item)}))))
-
-(schema/defn ^:always-validate retrieve :- [{:container-id UniqueDraftID :item-id UniqueDraftID :change-at lib-schema/ISO8601}]
-  [container :- (schema/conditional sequential? [UniqueDraftID] :else UniqueDraftID)]
-  (if (sequential? container)
-    (flatten (pmap retrieve container))
-    (->> (far/query c/dynamodb-opts table-name {:container_id [:eq container]}
-          {:filter-expr "#k > :v"
-           :expr-attr-names {"#k" "ttl"}
-           :expr-attr-vals {":v" (ttl/ttl-now)}})
-      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
-      (map #(select-keys % [:container-id :item-id :change-at])))))
+  (when-let [full-item (retrieve-by-item old-container-id item-id)]
+    (store! new-container-id item-id (:change-at full-item))
+    (delete-by-item! old-container-id item-id)))
 
 (comment
 
