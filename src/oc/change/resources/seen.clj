@@ -21,7 +21,11 @@
   (str container-id "-" item-id))
 
 (schema/defn ^:always-validate store!
-  
+
+  ;; Store a new seen from an existing one
+  ([seen-item]
+   (lib-seen/store! c/dynamodb-opts seen-item))
+
   ;; Saw the whole container, so the item-id is a placeholder
   ([user-id :- lib-schema/UniqueID
     org-id :- lib-schema/UniqueID
@@ -71,5 +75,15 @@
                                                                        :container-id lib-schema/UniqueID
                                                                        :item-id lib-schema/UniqueID
                                                                        :seen-at lib-schema/ISO8601})
-  [db-opts user-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  [user-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
   (lib-seen/retrieve-by-user-item c/dynamodb-opts user-id item-id))
+
+(schema/defn ^:always-validate retrieve-by-container-item :- [{(schema/optional-key :org-id) lib-schema/UniqueID
+                                                               (schema/optional-key :container-id) lib-schema/UniqueID
+                                                               (schema/optional-key :item-id) lib-schema/UniqueID
+                                                               (schema/optional-key :container-item-id) lib-schema/UniqueID
+                                                               (schema/optional-key :user-id) lib-schema/UniqueID
+                                                               (schema/optional-key :seen-at) lib-schema/ISO8601
+                                                               (schema/optional-key :seen-ttl) schema/Any}]
+  [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  (lib-seen/retrieve-by-container-item c/dynamodb-opts container-id item-id))
