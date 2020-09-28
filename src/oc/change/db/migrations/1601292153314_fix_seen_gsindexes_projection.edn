@@ -1,0 +1,43 @@
+(ns oc.change.db.migrations.fix-seen-gsindexes-projection
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.change.config :as config]
+            [oc.change.resources.seen :as seen]
+            [oc.change.resources.common :refer (gsi-matches-type?)]))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; needs to be idempotent
+(defn up [dynamodb-opts]
+  ;; Do great things
+  (let [seen-container-id-item-id-match-type? (gsi-matches-type? dynamodb-opts seen/container-id-item-id-gsi-name seen/table-name seen/container-id-item-id-gsi-projection)
+        seen-container-id-match-type? (gsi-matches-type? dynamodb-opts seen/container-id-gsi-name seen/table-name seen/container-id-gsi-projection)]
+    (if seen-container-id-item-id-match-type?
+      (println (format "%s index on %s has right projection, skipping" seen/container-id-item-id-gsi-name seen/table-name))
+      (do
+        (println (format "Deleting index %s on table %s because it has wrong projection...\n" seen/container-id-item-id-gsi-name seen/table-name))
+        (println
+         @(far/update-table dynamodb-opts
+                            seen/table-name
+                            {:gsindexes {:operation :delete
+                                         :name seen/container-id-item-id-gsi-name}}))))
+    (if seen-container-id-match-type?
+      (println (format "%s index on %s has right projection, skipping" seen/container-id-gsi-name seen/table-name))
+      (do
+        (println (format "Deleting index %s on table %s because it has wrong projection...\n" seen/container-id-gsi-name seen/table-name))
+        (println
+         @(far/update-table dynamodb-opts
+                            seen/table-name
+                            {:gsindexes {:operation :delete
+                                         :name seen/container-id-gsi-name}}))))
+    (when (or (not seen-container-id-item-id-match-type?)
+              (not seen-container-id-match-type?))
+      (throw (ex-info
+              (format (str "One or both seen gsindexes %s (%s) and %s (%s) have the wrong projection, "
+                           "re-run migrations to make sure they will be re-created with the right fields.")
+                      seen/container-id-item-id-gsi-name
+                      (str seen/container-id-item-id-gsi-projection)
+                      seen/container-id-gsi-name
+                      (str seen/container-id-gsi-projection))
+              {:index-one seen/container-id-item-id-gsi-name
+               :index-two seen/container-id-gsi-name}))))
+  true) ; return true on success

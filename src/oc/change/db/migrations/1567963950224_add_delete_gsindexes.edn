@@ -27,7 +27,7 @@
                        :name seen/container-id-item-id-gsi-name
                        :hash-keydef [:item-id :s]
                        :range-keydef [:container_id :s]
-                       :projection :all}})))
+                       :projection seen/container-id-item-id-gsi-projection}})))
 
     (println "")
     (println
@@ -74,16 +74,15 @@
                        :name seen/container-id-gsi-name
                        :hash-keydef [:container_id :s]
                        :range-keydef [:user_id :s]
-                       :projection :all}})))
+                       :projection seen/container-id-gsi-projection}})))
 
     (when (and (not read-container-id-item-id-gsi-exists?)
                (not read-container-id-gsi-exists?))
       (throw (ex-info
-              (str
-               "Attempting to create a second GSIndex on the " read/table-name
-               " table, since this operation take a while please check that "
-               read/container-id-item-id-gsi-name
-               " has been created before running this migration again.")
+              (format (str "Attempting to create a second GSIndex on the %s table, "
+                           "since this operation take a while please check that %s "
+                           "has been created before running this migration again.")
+                      read/table-name read/container-id-item-id-gsi-name)
                {:index-one seen/container-id-item-id-gsi-name
                 :index-two seen/container-id-gsi-name})))
 

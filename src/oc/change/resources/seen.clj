@@ -11,7 +11,11 @@
 
 (def entire-container lib-seen/entire-container)
 
+(def container-id-gsi-projection lib-seen/container-id-gsi-projection)
+
 (def container-id-gsi-name (lib-seen/container-id-gsi-name c/dynamodb-opts))
+
+(def container-id-item-id-gsi-projection lib-seen/container-id-item-id-gsi-projection)
 
 (def container-id-item-id-gsi-name (lib-seen/container-id-item-id-gsi-name c/dynamodb-opts))
 
