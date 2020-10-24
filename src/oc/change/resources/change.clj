@@ -56,18 +56,18 @@
   true)
 
 (schema/defn ^:always-validate delete-by-item!
-  [container-id :- lib-schema/UniqueID item-id :- lib-schema/UniqueID]
+  [container-id :- UniqueDraftID item-id :- lib-schema/UniqueID]
   (far/delete-item c/dynamodb-opts table-name {:container_id container-id
                                                :item_id item-id}))
 
 (schema/defn ^:always-validate delete-by-container!
-  [container-id :- lib-schema/UniqueID]
+  [container-id :- UniqueDraftID]
   (doseq [item (far/query c/dynamodb-opts table-name {:container_id [:eq container-id]})]
     (far/delete-item c/dynamodb-opts table-name {:container_id container-id
                                                  :item_id (:item_id item)})))
 
 (schema/defn ^:always-validate move-item!
-  [item-id :- lib-schema/UniqueID old-container-id :- lib-schema/UniqueID new-container-id :- lib-schema/UniqueID]
+  [item-id :- lib-schema/UniqueID old-container-id :- UniqueDraftID new-container-id :- UniqueDraftID]
   (when-let [full-item (retrieve-by-item old-container-id item-id)]
     (store! new-container-id item-id (:change-at full-item))
     (delete-by-item! old-container-id item-id)))
