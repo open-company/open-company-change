@@ -7,6 +7,7 @@
   (:require [clojure.core.async :as async :refer (>!! <!)]
             [defun.core :refer (defun-)]
             [taoensso.timbre :as timbre]
+            [oc.lib.schema :as lib-schema]
             [oc.lib.async.watcher :as watcher]
             [oc.change.resources.seen :as seen]
             [oc.change.resources.change :as change]
@@ -32,8 +33,10 @@
   ([:delete :entry container-id item-id _author-id _change-at _new-item _old-item]
   (timbre/info "Persisting delete entry change on:" item-id "for container:" container-id)
   (change/delete-by-item! container-id item-id)
-  (seen/delete-by-item! container-id item-id)
-  (read/delete-by-item! container-id item-id))
+  ;; Delete the read/seen records only if it's not a draft
+  (when (lib-schema/unique-id? container-id)
+    (seen/delete-by-item! container-id item-id)
+    (read/delete-by-item! container-id item-id)))
 
   ([:move :entry container-id item-id _author-id _change-at new-item old-item]
   (timbre/info "Persisting move entry change for item:" item-id "from container:" (:board-uuid old-item) "to container:" (:board-uuid new-item))
