@@ -30,13 +30,15 @@
   Handle an incoming SQS message to the change service.
 
   {
-    :notification-type 'add|update|delete|dismiss|follow|unfollow|comment-add',
+    :notification-type 'add|update|delete|dismiss|follow|unfollow|comment-add|pin-toggle',
     :notification-at ISO8601,
     :user {...},
     :org {...},
     :board {...},
     :content {:new {...},
               :old {...},
+              :pin-container-uuid UniqueID
+              :nux-boards [UniqueID]
               :inbox-action {:?dismiss-at ISO8601,
                              :?follow Bool,
                              :?unfollow Bool}}
@@ -46,6 +48,7 @@
   (doseq [body (sqs/read-message-body (:body msg))]
     (let [msg-body (json/parse-string (:Message body) true)
           notification-change-type (keyword (:notification-type msg-body))
+          pin-toggle? (= notification-change-type :pin-toggle)
           org (:org msg-body)
           notification-content (:content msg-body)
           new-item (-> msg-body :content :new)
@@ -78,6 +81,7 @@
                           (= (name (:status new-item)) "published"))
           change-type (if move-item? :move notification-change-type)
           ?inbox-action (:inbox-action notification-content)
+          ?pin-container-uuid (-> msg-body :content :pin-container-uuid)
           ws-base-payload {:container-id payload-cont-id
                            :change-type change-type
                            :item-id item-id
@@ -93,6 +97,8 @@
                                                :users (:users msg-body)})
                        (#{:unread :dismiss :follow :unfollow} change-type)
                        (merge ws-base-payload {:inbox-action ?inbox-action})
+                       pin-toggle?
+                       (assoc ws-base-payload :pin-container-uuid ?pin-container-uuid)
                        :else
                        ws-base-payload)
           client-id (:client-id ?inbox-action)
@@ -129,6 +135,7 @@
                                                              :resource-type resource-type
                                                              :item-id item-id
                                                              :author-id user-id
+                                                             :pin-container-uuid ?pin-container-uuid
                                                              :new-item new-item
                                                              :old-item old-item}))
 
