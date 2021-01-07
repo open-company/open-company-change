@@ -147,6 +147,15 @@
                                               :container/change)
                                      :sender-ws-client-id ws-sender-client-id
                                      :payload ws-payload}))
+         (and (= resource-type :entry)
+              (= change-type :pin-toggle))
+         (do
+           (timbre/info "Alerting watcher of entry pin-toggle msg from SQS.")
+           (>!! watcher/watcher-chan {:send true
+                                      :watch-id container-id
+                                      :event :item/change
+                                      :sender-ws-client-id ws-sender-client-id
+                                      :payload ws-payload}))
         ;; Org or unknown
         :else
         (cond
