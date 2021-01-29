@@ -11,6 +11,7 @@
     [ring.middleware.keyword-params :refer (wrap-keyword-params)]
     [ring.middleware.params :refer (wrap-params)]
     [ring.middleware.reload :refer (wrap-reload)]
+    [ring.middleware.cookies :refer (wrap-cookies)]
     [ring.middleware.cors :refer (wrap-cors)]
     [compojure.core :as compojure :refer (GET)]
     [com.stuartsierra.component :as component]
@@ -202,6 +203,7 @@
     c/prod?           wrap-with-logger
     true              wrap-keyword-params
     true              wrap-params
+    true              wrap-cookies
     true              (wrap-cors #".*")
     c/ensure-origin   (wrap-ensure-origin c/ui-server-url)
     c/hot-reload      wrap-reload))

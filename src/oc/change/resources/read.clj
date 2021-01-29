@@ -68,7 +68,8 @@
   (lib-read/retrieve-by-container c/dynamodb-opts container-id))
 
 (schema/defn ^:always-validate retrieve-by-org :- [{(schema/optional-key :user-id) lib-schema/UniqueID
-                                                    (schema/optional-key :item-id) lib-schema/UniqueID}]
+                                                    (schema/optional-key :item-id) lib-schema/UniqueID
+                                                    (schema/optional-key :read-at) lib-schema/ISO8601}]
   [org-id :- lib-schema/UniqueID]
   (lib-read/retrieve-by-org c/dynamodb-opts org-id))
 
