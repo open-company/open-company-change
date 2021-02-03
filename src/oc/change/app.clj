@@ -185,6 +185,7 @@
     "Change TTL: " c/change-ttl " days\n"
     "Seen TTL: " c/seen-ttl " days\n"
     "AWS SQS change queue: " c/aws-sqs-change-queue "\n"
+    "Log level: " c/log-level "\n"
     "Hot-reload: " c/hot-reload "\n"
     "Ensure origin: " c/ensure-origin "\n"
     "Sentry: " c/dsn "\n"
@@ -211,7 +212,7 @@
   [port]
 
   ;; Stuff logged at error level goes to Sentry
-  (timbre/merge-config! {:level (keyword c/log-level)})
+  (timbre/merge-config! {:min-level (keyword c/log-level)})
 
   ;; Start the system
   (-> {:httpkit {:handler-fn app :port port}
