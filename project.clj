@@ -46,7 +46,7 @@
     ;; ***************** (JWT schema changes, more info here: *****************
     ;; ******* https://github.com/open-company/open-company-lib/pull/82) ******
     ;; ************************************************************************
-    [open-company/lib "0.17.31-alpha6" :exclusions [ring/ring-core com.amazonaws/aws-java-sdk-dynamodb commons-codec joda-time com.taoensso/encore]]
+    [open-company/lib "0.17.31-alpha6" :exclusions [ring/ring-core commons-codec org.clojure/tools.reader]]
     ;; ************************************************************************
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
