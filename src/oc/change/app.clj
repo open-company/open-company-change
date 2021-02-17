@@ -105,7 +105,8 @@
           client-id (:client-id ?inbox-action)
           ws-sender-client-id (:sender-ws-client-id msg-body)]
       
-      (timbre/info "Received message from SQS:" msg-body)
+      (timbre/infof "Received SQS message resource-type %s, notification-change-type %s, change-type: %s, pin-toggle?: %s, ?inbox-action: %s" resource-type notification-change-type change-type pin-toggle? ?inbox-action)
+      (timbre/debug "Received message from SQS:" msg-body)
       (cond
         
         ;; dismiss/follow/unfollow/comment-add of entry inbox action
