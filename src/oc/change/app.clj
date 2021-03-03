@@ -142,13 +142,21 @@
                                                              :old-item old-item}))
 
           (timbre/info "Alerting watcher of entry add/update/delete msg from SQS.")
-          (>!! watcher/watcher-chan {:send true
-                                     :watch-id container-id
-                                     :event (if (= resource-type :entry)
-                                              :item/change
-                                              :container/change)
-                                     :sender-ws-client-id ws-sender-client-id
-                                     :payload ws-payload}))
+          (if (and (= resource-type :entry)
+                   (= (:item-status ws-payload) "draft"))
+            ;; A draft was added
+            (>!! watcher/watcher-chan {:send true
+                                       :watch-id (str (:slug org) "-" (-> new-item :author :user-id))
+                                       :event :item/change
+                                       :sender-ws-client-id ws-sender-client-id
+                                       :payload ws-payload})
+            (>!! watcher/watcher-chan {:send true
+                                       :watch-id container-id
+                                       :event (if (= resource-type :entry)
+                                                :item/change
+                                                :container/change)
+                                       :sender-ws-client-id ws-sender-client-id
+                                       :payload ws-payload})))
          (and (= resource-type :entry)
               (= change-type :pin-toggle))
          (do
@@ -160,11 +168,7 @@
                                       :payload ws-payload}))
         ;; Org or unknown
         :else
-        (cond
-         (= resource-type :org)
-         (timbre/warn "Unhandled org message from SQS:" change-type resource-type)
-         :default
-         (timbre/warn "Unknown message from SQS:" change-type resource-type)))))
+        (timbre/warn "Unknown message from SQS:" change-type resource-type))))
     (sqs/ack done-channel msg))
 
 ;; ----- Request Routing -----
