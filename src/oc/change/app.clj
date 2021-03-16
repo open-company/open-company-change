@@ -194,10 +194,7 @@
     "Log level: " c/log-level "\n"
     "Hot-reload: " c/hot-reload "\n"
     "Ensure origin: " c/ensure-origin "\n"
-    "Sentry: " c/dsn "\n"
-    "  env: " c/sentry-env "\n"
-    (when-not (s/blank? c/sentry-release)
-      (str "  release: " c/sentry-release "\n"))
+    "Sentry: " c/sentry-config "\n"
     "\n"
     (when c/intro? "Ready to serve...\n"))))
 
