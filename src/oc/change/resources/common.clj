@@ -22,3 +22,8 @@
     (case index-type
       :all (= (-> index-data :projection :projection-type) "ALL")
       (:keys :keys-only) (= (-> index-data :projection :projection-type) "KEYS_ONLY"))))
+
+(defn table-exists?
+  "Return table description only if it exists"
+  [dynamodb-opts table-name]
+  (far/describe-table dynamodb-opts table-name))

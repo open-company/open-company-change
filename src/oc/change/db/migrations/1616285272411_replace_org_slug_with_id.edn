@@ -1,0 +1,73 @@
+(ns oc.change.db.migrations.replace-org-slug-with-id
+  (:require [taoensso.faraday :as far]
+            [oc.lib.db.migrations :as m]
+            [oc.lib.change.resources.follow :as follow]
+            [oc.lib.dynamo.attribute-change :as attribute-change]
+            [oc.change.config :as config]
+            [oc.change.resources.common :refer (gsi-exists-on-table?)]))
+
+(defn- org-slug-gsi-name [db-opts]
+  (keyword (str (:table-prefix db-opts) "_org_slug_gsi_name")))
+
+(defn- org-slug-board-unfollowers-gsi-name [db-opts]
+  (keyword (str (:table-prefix db-opts) "_org_slug_board_unfollower_gsi_name")))
+
+;; NB: The fact that these migrations have been run already does not currently persist, so the up method
+;; needs to be idempotent
+(defn up [dynamodb-opts]
+  ;; Do great things
+  ;; Delete org-slug-gsi-name GSIndex
+  (when (gsi-exists-on-table? config/dynamodb-opts (org-slug-gsi-name config/dynamodb-opts) (follow/table-name config/dynamodb-opts))
+    (println
+    @(far/update-table config/dynamodb-opts
+                        (org-slug-gsi-name config/dynamodb-opts)
+                        {:gsindexes {:operation :delete
+                                     :name (org-slug-gsi-name config/dynamodb-opts)}})))
+
+  (when (gsi-exists-on-table? config/dynamodb-opts (org-slug-board-unfollowers-gsi-name config/dynamodb-opts) (follow/board-unfollower-table-name config/dynamodb-opts))
+    (println
+     @(far/update-table config/dynamodb-opts
+                        (follow/board-unfollower-table-name config/dynamodb-opts)
+                        {:gsindexes {:operation :delete
+                                     :name (org-slug-board-unfollowers-gsi-name config/dynamodb-opts)}})))
+  
+  (attribute-change/update-attribute-name config/dynamodb-opts (follow/table-name config/dynamodb-opts) "org_slug" "org_id" {:limit 0 :run? true})
+
+  ;; Create org-id gsi index on follow table if not already present
+  (println
+   (if (gsi-exists-on-table? config/dynamodb-opts (follow/org-id-gsi-name config/dynamodb-opts) (follow/table-name config/dynamodb-opts))
+     (format "%s index already exists on %s, skipping" (follow/org-id-gsi-name config/dynamodb-opts) (follow/table-name config/dynamodb-opts))
+     @(far/update-table config/dynamodb-opts
+                        (follow/table-name config/dynamodb-opts)
+                        {:gsindexes {:operation :create
+                                     :name (follow/org-id-gsi-name config/dynamodb-opts)
+                                     :billing-mode :pay-per-request
+                                     :hash-keydef [:org_id :s]
+                                     :range-keydef [:user_id :s]
+                                     :projection :keys-only}})))
+
+  ;; Create org-id gsi index on boards follower table if not already present
+  (println
+   (if (gsi-exists-on-table? config/dynamodb-opts
+                             (follow/org-id-board-unfollowers-gsi-name config/dynamodb-opts)
+                             (follow/board-unfollower-table-name config/dynamodb-opts))
+     (format "%s index already exists on %s, skipping" (follow/org-id-board-unfollowers-gsi-name config/dynamodb-opts)
+             (follow/board-unfollower-table-name config/dynamodb-opts))
+     @(far/update-table config/dynamodb-opts
+                        (follow/board-unfollower-table-name config/dynamodb-opts)
+                        {:gsindexes {:operation :create
+                                     :name (follow/org-id-board-unfollowers-gsi-name config/dynamodb-opts)
+                                     :billing-mode :pay-per-request
+                                     :hash-keydef [:org_id :s]
+                                     :range-keydef [:board_uuid :s]
+                                     :projection :all}})))
+
+  true) ; return true on success
+
+(comment
+  ;; Better to run this manually from the REPL to supervise the execution
+  (require '[oc.lib.dynamo.attribute-change :as attribute-change])
+  ;; Better to run this at the REPL manually to supervise the execution,
+  ;; and to retrieve the org slug->uuid list quickly
+  (let [orgs-slug-uuid-map {"carrot" "1234-1234-1234"}]
+    (attribute-change/move-attribute config/dynamodb-opts (follow/table-name config/dynamodb-opts) "org_slug" "org_id" orgs-slug-uuid-map {:limit 0 :run? false})))

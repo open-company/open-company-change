@@ -3,7 +3,7 @@
             [oc.change.config :as config]
             ; [oc.change.resources.change :as change]
             [oc.change.resources.seen :as seen]
-            [oc.lib.dynamo.common :as ttl]))
+            [oc.lib.dynamo.ttl :as ttl]))
 
 ;; NB: The fact that these migrations have been run already does not currently persist, so the up method
 ;; needs to be idempotent

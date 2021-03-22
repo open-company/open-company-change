@@ -2,10 +2,10 @@
   "Store tuples of: container-id, item-id and change timestamp, with a TTL"
   (:require [taoensso.faraday :as far]
             [schema.core :as schema]
-            [taoensso.timbre :as timbre]
+            [clojure.set :as clj-set]
             [oc.lib.schema :as lib-schema]
             [oc.change.config :as c]
-            [oc.lib.dynamo.common :as ttl]))
+            [oc.lib.dynamo.ttl :as ttl]))
 
 (def table-name (keyword (str c/dynamodb-table-prefix "_change")))
 (def container-id-item-id-gsi-name (str c/dynamodb-table-prefix "_change_gsi_container_id_item_id"))
@@ -33,7 +33,7 @@
           {:filter-expr "#k > :v"
            :expr-attr-names {"#k" "ttl"}
            :expr-attr-vals {":v" (ttl/ttl-now)}})
-      (map #(clojure.set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
+      (map #(clj-set/rename-keys % {:container_id :container-id :item_id :item-id :change_at :change-at}))
       (map #(select-keys % [:container-id :item-id :change-at])))))
 
 (schema/defn ^:always-validate retrieve-by-item :- (schema/maybe {(schema/optional-key :container-id) UniqueDraftID
@@ -43,7 +43,7 @@
   (when-let [full-item (far/get-item c/dynamodb-opts table-name {:container_id container-id
                                                                  :item_id item-id})]
     (-> full-item
-     (clojure.set/rename-keys {:container_id :container-id :item_id :item-id :change_at :change-at})
+     (clj-set/rename-keys {:container_id :container-id :item_id :item-id :change_at :change-at})
      (select-keys [:container-id :item-id :change-at]))))
 
 (schema/defn ^:always-validate store!
@@ -76,6 +76,7 @@
 
   (require '[oc.lib.time :as oc-time])
   (require '[oc.change.resources.change :as change] :reload)
+  (require '[aprint.core :refer (aprint)])
 
   (far/list-tables c/dynamodb-opts)
 

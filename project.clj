@@ -46,7 +46,7 @@
     ;; ***************** (JWT schema changes, more info here: *****************
     ;; ******* https://github.com/open-company/open-company-lib/pull/82) ******
     ;; ************************************************************************
-    [open-company/lib "0.17.35-alpha3" :exclusions [ring/ring-core commons-codec org.clojure/tools.reader]]
+    [open-company/lib "0.19.0-alpha1" :exclusions [ring/ring-core commons-codec org.clojure/tools.reader]]
     ;; ************************************************************************
     ;; In addition to common functions, brings in the following common dependencies used by this project:
     ;; httpkit - Web server http://http-kit.org/
@@ -168,6 +168,7 @@
                       "OpenCompany Change REPL\n"
                       "\nReady to do your bidding... I suggest (go) or (go <port>) as your first command.\n"))
     :init-ns dev
+    :timeout 1200000
   }
 
   :aliases {

@@ -1,9 +1,7 @@
 (ns oc.change.resources.seen
   "Store tuples of: user-id, org-id, container-id, item-id and seen-at timestamp"
-  (:require [taoensso.faraday :as far]
-            [schema.core :as schema]
+  (:require [schema.core :as schema]
             [oc.lib.schema :as lib-schema]
-            [taoensso.timbre :as timbre]
             [oc.change.config :as c]
             [oc.lib.change.resources.seen :as lib-seen]))
 

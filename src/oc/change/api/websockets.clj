@@ -115,11 +115,11 @@
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
         user-ids (:user-ids ?data)
-        org-slug (:org-slug ?data)]
-    (timbre/info "[websocket] user/watch by:" user-id "/" client-id "on" org-slug)
+        org-id (:org-id ?data)]
+    (timbre/info "[websocket] user/watch by:" user-id "/" client-id "on" org-id)
     (doseq [user-id user-ids]
       (>!! watcher/watcher-chan {:watch true
-                                 :watch-id (str org-slug "-" user-id)
+                                 :watch-id (str org-id "-" user-id)
                                  :client-id client-id}))))
 
 (defmethod -event-msg-handler
@@ -196,54 +196,18 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)]
-    (timbre/info "[websocket] follow/list for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:follow-list true :user-id user-id :client-id client-id :org-slug org-slug})))
-
-;; Followers count
+        org-id (:org-id ?data)]
+    (timbre/info "[websocket] follow/list for:" user-id "org:" org-id)
+    (>!! persistence/persistence-chan {:follow-list true :user-id user-id :client-id client-id :org-id org-id})))
 
 (defmethod -event-msg-handler
   :followers/count
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)]
-    (timbre/info "[websocket] followers/count from:" user-id "for org:" org-slug)
-    (>!! persistence/persistence-chan {:followers-count true :user-id user-id :client-id client-id :org-slug org-slug})))
-
-;; Follow/unfollow publisher(s)
-
-(defmethod -event-msg-handler
-  :publishers/follow
-  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [user-id (-> ring-req :params :user-id)
-        client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
-        publisher-uuids (:publisher-uuids ?data)]
-    (timbre/info "[websocket] publishers/follow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:follow-publishers true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuids publisher-uuids})))
-
-(defmethod -event-msg-handler
-  :publisher/follow
-
-  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [user-id (-> ring-req :params :user-id)
-        client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
-        publisher-uuid (:publisher-uuid ?data)]
-    (timbre/info "[websocket] publisher/follow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:follow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
-
-(defmethod -event-msg-handler
-  :publisher/unfollow
-
-  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [user-id (-> ring-req :params :user-id)
-        client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
-        publisher-uuid (:publisher-uuid ?data)]
-    (timbre/info "[websocket] publisher/unfollow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:unfollow-publisher true :user-id user-id :client-id client-id :org-slug org-slug :publisher-uuid publisher-uuid})))
+        org-id (:org-id ?data)]
+    (timbre/info "[websocket] followers/count from:" user-id "for org:" org-id)
+    (>!! persistence/persistence-chan {:followers-count true :user-id user-id :client-id client-id :org-id org-id})))
 
 ;; Follow/unfollow board(s)
 
@@ -252,10 +216,10 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
+        org-id (:org-id ?data)
         board-uuids (:board-uuids ?data)]
-    (timbre/info "[websocket] boards/unfollow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:unfollow-boards true :user-id user-id :client-id client-id :org-slug org-slug :board-uuids board-uuids})))
+    (timbre/info "[websocket] boards/unfollow for:" user-id "org:" org-id)
+    (>!! persistence/persistence-chan {:unfollow-boards true :user-id user-id :client-id client-id :org-id org-id :board-uuids board-uuids})))
 
 (defmethod -event-msg-handler
   :board/follow
@@ -263,10 +227,10 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
+        org-id (:org-id ?data)
         board-uuid (:board-uuid ?data)]
-    (timbre/info "[websocket] board/follow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:follow-board true :user-id user-id :client-id client-id :org-slug org-slug :board-uuid board-uuid})))
+    (timbre/info "[websocket] board/follow for:" user-id "org:" org-id)
+    (>!! persistence/persistence-chan {:follow-board true :user-id user-id :client-id client-id :org-id org-id :board-uuid board-uuid})))
 
 (defmethod -event-msg-handler
   :board/unfollow
@@ -274,10 +238,10 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [user-id (-> ring-req :params :user-id)
         client-id (-> ring-req :params :client-id)
-        org-slug (:org-slug ?data)
+        org-id (:org-id ?data)
         board-uuid (:board-uuid ?data)]
-    (timbre/info "[websocket] board/unfollow for:" user-id "org:" org-slug)
-    (>!! persistence/persistence-chan {:unfollow-board true :user-id user-id :client-id client-id :org-slug org-slug :board-uuid board-uuid})))
+    (timbre/info "[websocket] board/unfollow for:" user-id "org:" org-id)
+    (>!! persistence/persistence-chan {:unfollow-board true :user-id user-id :client-id client-id :org-id org-id :board-uuid board-uuid})))
 
 ;; ----- Sente router event loop (incoming from Sente/WebSocket) -----
 
