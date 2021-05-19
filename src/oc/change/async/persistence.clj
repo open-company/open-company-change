@@ -102,6 +102,14 @@
     ; return the differences newly changed items & already seen items
     (vec (clojure.set/difference changed-items seen-items))))
 
+(defn- last-item-seen-for [container-id all-seens]
+  (->> all-seens
+       (filter #(= container-id (:container-id %)))
+       (sort-by :seen-at)
+       (vec)
+       first
+       :seen-at))
+
 
 (defn- unread-items-for
   "
@@ -151,7 +159,8 @@
   (timbre/debug "Check status for containers:" container-ids "with changes:" (vec changes) "and seens:" (vec seens))
   (pmap #(hash-map :container-id %
                    :unseen (unseen-items-for % changes seens)
-                   :unread (unread-items-for % changes reads))
+                   :unread (unread-items-for % changes reads)
+                   :last-seen-at (last-item-seen-for % seens))
    container-ids))
 
 ;; ----- Event handling -----
