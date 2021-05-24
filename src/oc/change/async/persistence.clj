@@ -107,6 +107,7 @@
        (filter #(= container-id (:container-id %)))
        (sort-by :seen-at)
        (vec)
+       (reverse)
        first
        :seen-at))
 
